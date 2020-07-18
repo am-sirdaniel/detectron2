@@ -1,4 +1,4 @@
-keypoints# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 from typing import List
 import torch
 from torch import nn
@@ -99,7 +99,7 @@ def integral_3d_innovate(heatmap_):
 
     return ({'probabilitymap': h_norm, 'pose_3d': pose3d}) #(N,K,3)
 
-def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, used_2d = True):
+def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, 2d = True):
     """
     Arguments:
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
@@ -124,7 +124,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, used_2d = Tr
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        print('keypoints', keypoints)
+        print(keypoints.tensor)
         #GT keypoints -> GT heatmaps  
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
@@ -132,7 +132,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, used_2d = Tr
         #GT heatmaps -> to 1D vector
         heatmaps.append(heatmaps_per_image.view(-1)) #N*K
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
-        kps.append(keypoints)
+        kps.append(keypoints.tensor)
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -153,7 +153,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, used_2d = Tr
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
-    if used_2d:
+    if 2d:
         pred_integral = integral_2d_innovate(pred_keypoint_logits)
         pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
@@ -347,3 +347,4 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
