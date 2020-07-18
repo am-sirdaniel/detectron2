@@ -10,7 +10,7 @@ from detectron2.structures import Instances, heatmaps_to_keypoints
 from detectron2.utils.events import get_event_storage
 from detectron2.utils.registry import Registry
 
-_TOTAL_SKIPPED = 
+_TOTAL_SKIPPED = 0
 
 
 print('********************USING INTEGRAL INNOVATE *****************')
