@@ -124,7 +124,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        print('keypoints', keypoints.tensor)
+        #print('keypoints', keypoints.tensor)
         #GT keypoints -> GT heatmaps  
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
@@ -132,7 +132,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         #GT heatmaps -> to 1D vector
         heatmaps.append(heatmaps_per_image.view(-1)) #N*K
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
-        kps.append(keypoints.tensor)
+        kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -161,10 +161,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         pred_integral = integral_3d_innovate(pred_keypoint_logits)
         pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
     
-    print(pred_integral[0:2])
-    print('kps', kps[0:2])
+    print('pred_integral shape', pred_integral.shape)
+    print('kps shape', torch.Tensor(kps).shape)
     #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
-    keypoint_loss = torch.nn.functional.mse_loss(pred_integral, torch.Tensor(kps).view(N,K, -1)[valid])
+    s1, s2 = torch.Tensor(kps).shape[0], torch.Tensor(kps).shape[1] #shape
+    keypoint_loss = torch.nn.functional.mse_loss(pred_integral, torch.Tensor(kps).view(s1,s2, -1)[valid])
 
 
 
