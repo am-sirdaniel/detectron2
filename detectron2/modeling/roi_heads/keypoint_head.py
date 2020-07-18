@@ -99,7 +99,7 @@ def integral_3d_innovate(heatmap_):
 
     return ({'probabilitymap': h_norm, 'pose_3d': pose3d}) #(N,K,3)
 
-def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, 2d = True):
+def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, used_2d = True):
     """
     Arguments:
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
@@ -152,7 +152,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, 2d = True):
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
-    if 2d:
+    if used_2d:
         pred_integral = integral_2d_innovate(pred_keypoint_logits)
         pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
