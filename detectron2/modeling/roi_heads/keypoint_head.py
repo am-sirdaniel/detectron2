@@ -158,11 +158,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     if use_2d:
         pred_integral = integral_2d_innovate(pred_keypoint_logits)
-        print('raw pred integral output: ', pred_integral.shape)
+        print('raw 2d pred integral output: ', pred_integral['pose_2d'].shape)
         pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
     else: #3d
         pred_integral = integral_3d_innovate(pred_keypoint_logits)
+        print('raw 3d pred integral output: ', pred_integral['pose_3d'].shape)
         pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
     
     print('pred_integral removed shape', pred_integral.shape)
