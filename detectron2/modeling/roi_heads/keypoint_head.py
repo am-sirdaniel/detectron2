@@ -13,8 +13,6 @@ from detectron2.utils.registry import Registry
 _TOTAL_SKIPPED = 0
 
 
-print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
-
 __all__ = [
     "ROI_KEYPOINT_HEAD_REGISTRY",
     "build_keypoint_head",
@@ -26,6 +24,7 @@ __all__ = [
 ROI_KEYPOINT_HEAD_REGISTRY = Registry("ROI_KEYPOINT_HEAD")
 ROI_KEYPOINT_HEAD_REGISTRY.__doc__ = """
 Registry for keypoint heads, which make keypoint predictions from per-region features.
+
 The registered object will be called with `obj(cfg, input_shape)`.
 """
 
@@ -37,76 +36,13 @@ def build_keypoint_head(cfg, input_shape):
     name = cfg.MODEL.ROI_KEYPOINT_HEAD.NAME
     return ROI_KEYPOINT_HEAD_REGISTRY.get(name)(cfg, input_shape)
 
-def integral_2d_innovate(heatmap):
-    #print('2d Innovate being used')
-    #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
-    h, w = heatmap.shape[2], heatmap.shape[3]
 
-     #implementing softmax 
-    heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
-    exp_heatmap = torch.exp(heatmap)
-    h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
-    
-    #DISCRETE FORM of the Integral Equation
-    # all locations p in the domain, 
-    x_list = torch.linspace(0,1,h).cuda()#Why 0 and 1? it is easy to manipulate values btw 0 and 1
-    y_list = torch.linspace(0,1,w).cuda()
-    # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
-    i,j = torch.meshgrid(x_list, y_list)
-
-    #weighted by their probabilities.
-    i_ = torch.sum(i*h_norm, dim=(-1,-2))
-    j_ = torch.sum(j*h_norm, dim=(-1,-2))
-
-    #Modified arrangement
-    pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,],
-                                       #[j,j,j,,,]]
-
-    return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
-
-def integral_3d_innovate(heatmap_):
-    print('3d Innovate being used')
-    #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
-    h, w = heatmap.shape[2], heatmap.shape[3]
-
-    # H Heatmap, X,Y,Z location maps
-    heatmap = heatmap_[:,0:18,:,:]
-    location_map_X = heatmap_[:,18:36,:,:]
-    location_map_Y = heatmap_[:,36:54,:,:]
-    location_map_Z = heatmap_[:,54:72,:,:]
-
-     #implementing softmax ,#soving the numerical problem
-    heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) 
-    exp_heatmap = torch.exp(heatmap)
-    h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
-    
-    #DISCRETE FORM of the Integral Equation
-    # all locations p in the domain, 
-    #x_list = torch.linspace(0,1,h).cuda()#Why 0 and 1? it is easy to manipulate values btw 0 and 1
-    #y_list = torch.linspace(0,1,w).cuda()
-    # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
-    #i,j = torch.meshgrid(x_list, y_list)
-
-
-
-    #weighted by their probabilities.
-    i_ = torch.sum(location_map_X*h_norm, dim=(-1,-2))
-    j_ = torch.sum(location_map_Y*h_norm, dim=(-1,-2))
-    z_ = torch.sum(location_map_Z*h_norm, dim=(-1,-2))
-
-    pose3d  = torch.stack((i_,j_,z_),dim=2) #[[i,i,i,,],
-                                       #[j,j,j,,,]]
-
-    return ({'probabilitymap': h_norm, 'pose_3d': pose3d}) #(N,K,3)
-
-def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = True):
+def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     """
     Arguments:
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
             of instances in the batch, K is the number of keypoints, and S is the side length
             of the keypoint heatmap. The values are spatial logits.
-            predicted keypoint heatmaps in `pred_keypoint_logits`
-
         instances (list[Instances]): A list of M Instances, where M is the batch size.
             These instances are predictions from the model
             that are in 1:1 correspondence with pred_keypoint_logits.
@@ -114,35 +50,26 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
             instance.
         normalizer (float): Normalize the loss by this amount.
             If not specified, we normalize by the number of visible keypoints in the minibatch.
+
     Returns a scalar tensor containing the loss.
     """
-
     heatmaps = []
     valid = []
-    kps = []
 
     keypoint_side_len = pred_keypoint_logits.shape[2]
-    #M = len(instances)
-    #kps =  torch.zeros(M, )
     for instances_per_image in instances:
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        #e.g (8,6,3)
-        print('Daniel test keypoints', keypoints.tensor.shape)
-        #GT keypoints -> GT heatmaps  
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
         )
-        #GT heatmaps -> to 1D vector
-        heatmaps.append(heatmaps_per_image.view(-1)) #N*K
-        valid.append(valid_per_image.view(-1)) #stretch to 1D vector
-        #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
-        kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
+        heatmaps.append(heatmaps_per_image.view(-1))
+        valid.append(valid_per_image.view(-1))
 
     if len(heatmaps):
-        keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
-        valid = cat(valid, dim=0).to(dtype=torch.uint8) #single vector
+        keypoint_targets = cat(heatmaps, dim=0)
+        valid = cat(valid, dim=0).to(dtype=torch.uint8)
         valid = torch.nonzero(valid).squeeze(1)
 
     # torch.mean (in binary_cross_entropy_with_logits) doesn't
@@ -155,87 +82,19 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         return pred_keypoint_logits.sum() * 0
 
     N, K, H, W = pred_keypoint_logits.shape
+    pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
-    # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
-    # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
-    #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
-    if use_2d:
-        print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
-        print('using 2d innovate')
-        pred_integral = integral_2d_innovate(pred_keypoint_logits)
-        #print('raw 2d pred integral output: ', pred_integral['pose_2d'].shape)
-        pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
-
-    else: #3d
-        pred_integral = integral_3d_innovate(pred_keypoint_logits)
-        print('raw 3d pred integral output: ', pred_integral['pose_3d'].shape)
-        pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
-    
-    #print('pred_integral removed shape', pred_integral.shape)
-    kps = torch.cat(kps)
-
-    #normalize kps
-    #All data mean-std normalization
-    # kp_mean = torch.Tensor([[942.8855, 326.6883],
-    #     [941.4666, 405.1611],
-    #     [740.3054, 304.9617],
-    #     [737.7035, 421.5804],
-    #     [530.7987, 290.6349],
-    #     [534.2322, 425.0898]]).cuda()
-
-    # kp_std = torch.Tensor([[ 94.6912,  31.1105],
-    #     [ 96.2150,  31.2903],
-    #     [ 89.2333,  28.6181],
-    #     [ 89.7864,  32.5412],
-    #     [109.8567,  45.1855],
-    #     [ 92.0391,  33.6960]]).cuda()
-
-    #With Batch mean and std, you wont have fixed values to de-normarlize
-
-    #kps = (kps - kp_mean)/kp_std
-
-    #Min-max Normalization]
-    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
-
-    partx = kps[:,:,0:1]
-    partx = (partx - xmin)/(xmax - xmin)
-
-    party = kps[:,:,1:2]
-    party = (party - ymin)/(ymax - ymin)
-
-    kps = torch.stack((partx,  party), dim = -2)
-    #print('1st kps', kps.shape)
-    kps = kps.squeeze(-1)
-
-
-    #print('raw kps shape', kps.shape)
-    #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
-    s1, s2 = kps.shape[0], kps.shape[1] #shape
-    kps = kps.view(s1*s2, -1)[valid]
-    #print('kps removed shape', kps.shape)
-
-
-    print('pred: ', pred_integral[0:3], pred_integral[-3:])
-    print('kps: ', kps[0:3], kps[-3:])
-    print()
-    print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    keypoint_loss = torch.nn.functional.mse_loss(pred_integral, kps)
-    #print()
-    print('raw loss', keypoint_loss)
-
-
-
-    # keypoint_loss = F.cross_entropy(
-    #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
-    # )
+    print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][0:2],  pred_keypoint_logits[valid][-2:])
+    print('pred_keypoint_logits[valid]', keypoint_targets[valid][0:2],  keypoint_targets[valid][-2:])
+    keypoint_loss = F.cross_entropy(
+        pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
+    )
 
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
     if normalizer is None:
         normalizer = valid.numel()
-    #keypoint_loss /= normalizer
+    keypoint_loss /= normalizer
 
-    #print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
-    print()
     return keypoint_loss
 
 
@@ -243,11 +102,13 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     """
     Post process each predicted keypoint heatmap in `pred_keypoint_logits` into (x, y, score)
         and add it to the `pred_instances` as a `pred_keypoints` field.
+
     Args:
         pred_keypoint_logits (Tensor): A tensor of shape (R, K, S, S) where R is the total number
            of instances in the batch, K is the number of keypoints, and S is the side length of
            the keypoint heatmap. The values are spatial logits.
         pred_instances (list[Instances]): A list of N Instances, where N is the number of images.
+
     Returns:
         None. Each element in pred_instances will contain an extra "pred_keypoints" field.
             The field is a tensor of shape (#instance, K, 3) where the last
@@ -255,35 +116,17 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
             The scores are larger than 0.
     """
     # flatten all bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    #bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
+    bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
 
-    #keypoint_results = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
-    #num_instances_per_image = [len(i) for i in pred_instances]
-    #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    out = integral_2d_innovate(pred_keypoint_logits)
-    heatmap_norm = out['probabilitymap']
-    scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    #unstack
-    i_, j_  = torch.unbind(out['pose_2d'], dim=2)
-
-    #de-normalize
-    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
-    i_ = (i_ * (xmax - xmin)) + xmin
-    j_ = (j_ * (ymax - ymin)) + ymin
-
-    #instance, K, 3) 3-> (x, y, score)
-    keypoint_results = torch.stack((i_,j_, scores),dim=2)
+    keypoint_results = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
+    num_instances_per_image = [len(i) for i in pred_instances]
+    print('num_instances_per_image', num_instances_per_image)
+    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     print('keypoint_results', keypoint_results.shape)
-    print('pred_instances', pred_instances)
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
-        
-        print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        print('type:', instances_per_image.pred_keypoints.shape)
-        instances_per_image.pred_keypoints = keypoint_results_per_image.unsqueeze(0)
-        
-    #instances_per_image.pred_keypoints = keypoint_results
+        instances_per_image.pred_keypoints = keypoint_results_per_image
 
 
 class BaseKeypointRCNNHead(nn.Module):
@@ -295,6 +138,7 @@ class BaseKeypointRCNNHead(nn.Module):
     def __init__(self, *, num_keypoints, loss_weight=1.0, loss_normalizer=1.0):
         """
         NOTE: this interface is experimental.
+
         Args:
             num_keypoints (int): number of keypoints to predict
             loss_weight (float): weight to multiple on the keypoint loss
@@ -338,6 +182,7 @@ class BaseKeypointRCNNHead(nn.Module):
                 Typically, this is the foreground instances in training, with
                 "proposal_boxes" field and other gt annotations.
                 In inference, it contains boxes that are already predicted.
+
         Returns:
             A dict of losses if in training. The predicted "instances" if in inference.
         """
@@ -373,6 +218,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
     def __init__(self, input_shape, *, num_keypoints, conv_dims, **kwargs):
         """
         NOTE: this interface is experimental.
+
         Args:
             input_shape (ShapeSpec): shape of the input feature
             conv_dims: an iterable of output channel counts for each conv in the head
