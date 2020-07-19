@@ -128,6 +128,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
+        #e.g (8,6,3)
         print('Daniel test keypoints', keypoints.tensor.shape)
         #GT keypoints -> GT heatmaps  
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
@@ -273,15 +274,15 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
     print('keypoint_results', keypoint_results.shape)
-    print('pred_instances', pred_instances.tensor.shape)
+    print('pred_instances', pred_instances)
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
+        print('type:', instances_per_image.pred_keypoints.shape)
         instances_per_image.pred_keypoints = keypoint_results_per_image.unsqueeze(0)
-        print('type:', instances_per_image.pred_keypoints.tensor.shape)
-
+        
     #instances_per_image.pred_keypoints = keypoint_results
 
 
