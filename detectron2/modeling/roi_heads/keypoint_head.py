@@ -170,21 +170,36 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     kps = torch.cat(kps)
 
     #normalize kps
-    kp_mean = torch.Tensor([[942.8855, 326.6883],
-        [941.4666, 405.1611],
-        [740.3054, 304.9617],
-        [737.7035, 421.5804],
-        [530.7987, 290.6349],
-        [534.2322, 425.0898]]).cuda()
+    #All data mean-std normalization
+    # kp_mean = torch.Tensor([[942.8855, 326.6883],
+    #     [941.4666, 405.1611],
+    #     [740.3054, 304.9617],
+    #     [737.7035, 421.5804],
+    #     [530.7987, 290.6349],
+    #     [534.2322, 425.0898]]).cuda()
 
-    kp_std = torch.Tensor([[ 94.6912,  31.1105],
-        [ 96.2150,  31.2903],
-        [ 89.2333,  28.6181],
-        [ 89.7864,  32.5412],
-        [109.8567,  45.1855],
-        [ 92.0391,  33.6960]]).cuda()
+    # kp_std = torch.Tensor([[ 94.6912,  31.1105],
+    #     [ 96.2150,  31.2903],
+    #     [ 89.2333,  28.6181],
+    #     [ 89.7864,  32.5412],
+    #     [109.8567,  45.1855],
+    #     [ 92.0391,  33.6960]]).cuda()
 
-    kps = (kps - kp_mean)/kp_std
+    #With Batch mean and std, you wont have fixed values to de-normarlize
+
+    #kps = (kps - kp_mean)/kp_std
+
+    #Min-max Normalization]
+    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+
+    partx = kps[:,0:1]
+    partx = (partx - xmin)/(xmax - xmin)
+
+    party = kps[:,1:2]
+    party = (party - xmin)/(xmax - xmin)
+
+    kps = torch.stack((partx,  party), dim = -2).squeeze(-1)
+
 
     #print('raw kps shape', kps.shape)
     #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
