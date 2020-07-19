@@ -38,7 +38,7 @@ def build_keypoint_head(cfg, input_shape):
     return ROI_KEYPOINT_HEAD_REGISTRY.get(name)(cfg, input_shape)
 
 def integral_2d_innovate(heatmap):
-    print('2d Innovate being used')
+    #print('2d Innovate being used')
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
     h, w = heatmap.shape[2], heatmap.shape[3]
 
@@ -229,9 +229,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
     if normalizer is None:
         normalizer = valid.numel()
-    keypoint_loss /= normalizer
+    #keypoint_loss /= normalizer
 
-    print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
+    #print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
     print()
     return keypoint_loss
 
