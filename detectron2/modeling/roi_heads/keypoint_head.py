@@ -266,9 +266,11 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
+    print('keypoint_results', keypoint_results.shape)
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
+        print('keypoint_results_per_image', keypoint_results_per_image.shape)
         instances_per_image.pred_keypoints = keypoint_results_per_image#.unsqueeze(0)
 
 
