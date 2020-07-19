@@ -211,6 +211,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     print('pred: ', pred_integral[0:3])
     print('kps: ', kps[0:3])
     print()
+    print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     keypoint_loss = torch.nn.functional.mse_loss(pred_integral, kps)
 
 
