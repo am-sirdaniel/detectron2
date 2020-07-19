@@ -105,6 +105,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
             of instances in the batch, K is the number of keypoints, and S is the side length
             of the keypoint heatmap. The values are spatial logits.
+            predicted keypoint heatmaps in `pred_keypoint_logits`
+
         instances (list[Instances]): A list of M Instances, where M is the batch size.
             These instances are predictions from the model
             that are in 1:1 correspondence with pred_keypoint_logits.
@@ -257,7 +259,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #keypoint_results = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
     #num_instances_per_image = [len(i) for i in pred_instances]
     #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    out = integral_2d_innovate(test)
+    out = integral_2d_innovate(pred_keypoint_logits)
     heatmap_norm = out['probabilitymap']
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #unstack
