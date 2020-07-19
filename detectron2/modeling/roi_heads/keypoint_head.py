@@ -158,7 +158,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     if use_2d:
         pred_integral = integral_2d_innovate(pred_keypoint_logits)
-        print('raw 2d pred integral output: ', pred_integral['pose_2d'].shape)
+        #print('raw 2d pred integral output: ', pred_integral['pose_2d'].shape)
         pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
     else: #3d
@@ -199,7 +199,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     party = (party - xmin)/(xmax - xmin)
 
     kps = torch.stack((partx,  party), dim = -2)
-    print('1st kps', kps.shape)
+    #print('1st kps', kps.shape)
     kps = kps.squeeze(-1)
 
 
@@ -210,8 +210,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     #print('kps removed shape', kps.shape)
 
 
-    print('pred: ', pred_integral[0:3])
-    print('kps: ', kps[0:3])
+    print('pred: ', pred_integral[0:3], pred_integral[-3:])
+    print('kps: ', kps[0:3], kps[-3:])
     print()
     print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     keypoint_loss = torch.nn.functional.mse_loss(pred_integral, kps)
