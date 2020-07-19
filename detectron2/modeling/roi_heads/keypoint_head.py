@@ -13,7 +13,7 @@ from detectron2.utils.registry import Registry
 _TOTAL_SKIPPED = 0
 
 
-print('********************USING INTEGRAL INNOVATE *****************')
+print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
 
 __all__ = [
     "ROI_KEYPOINT_HEAD_REGISTRY",
@@ -175,15 +175,15 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         [740.3054, 304.9617],
         [737.7035, 421.5804],
         [530.7987, 290.6349],
-        [534.2322, 425.0898]])
+        [534.2322, 425.0898]]).cuda()
 
     kp_std = torch.Tensor([[ 94.6912,  31.1105],
         [ 96.2150,  31.2903],
         [ 89.2333,  28.6181],
         [ 89.7864,  32.5412],
         [109.8567,  45.1855],
-        [ 92.0391,  33.6960]])
-    
+        [ 92.0391,  33.6960]]).cuda()
+
     kps = (kps - kp_mean)/kp_std
 
     #print('raw kps shape', kps.shape)
