@@ -200,7 +200,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     partx = (partx - xmin)/(xmax - xmin)
 
     party = kps[:,:,1:2]
-    party = (party - xmin)/(xmax - xmin)
+    party = (party - ymin)/(ymax - ymin)
 
     kps = torch.stack((partx,  party), dim = -2)
     #print('1st kps', kps.shape)
@@ -264,16 +264,22 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
+
+    #de-normalize
+    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    i_ = (i_ * (xmax - xmin)) + xmin
+    j_ = (j_ * (ymax - ymin)) + ymin
+
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
     print('keypoint_results', keypoint_results.shape)
 
-    for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
-        # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
-        print('type:', type(instances_per_image))
-        print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        instances_per_image.pred_keypoints = keypoint_results_per_image.unsqueeze(0)
-
+    # for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
+    #     # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
+    #     print('type:', type(instances_per_image))
+    #     print('keypoint_results_per_image', keypoint_results_per_image.shape)
+    #     instances_per_image.pred_keypoints = keypoint_results_per_image.unsqueeze(0)
+    instances_per_image.pred_keypoints = keypoint_results
 
 
 class BaseKeypointRCNNHead(nn.Module):
