@@ -198,7 +198,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     party = kps[:,1:2]
     party = (party - xmin)/(xmax - xmin)
 
-    kps = torch.stack((partx,  party), dim = -2).squeeze(-1)
+    kps = torch.stack((partx,  party), dim = -1)
+    print('1st kps', kps.shape)
+    kps = kps.squeeze(-1)
 
 
     #print('raw kps shape', kps.shape)
