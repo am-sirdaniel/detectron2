@@ -128,7 +128,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        #print('keypoints', keypoints.tensor)
+        print('Daniel test keypoints', keypoints.tensor.shape)
         #GT keypoints -> GT heatmaps  
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
@@ -270,8 +270,9 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
+        print('type:', type(instances_per_image))
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        instances_per_image.pred_keypoints = keypoint_results_per_image#.unsqueeze(0)
+        instances_per_image.pred_keypoints = keypoint_results_per_image.unsqueeze(0)
 
 
 
