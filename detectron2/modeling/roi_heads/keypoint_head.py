@@ -157,6 +157,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     if use_2d:
+        print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
+        print('using 2d innovate')
         pred_integral = integral_2d_innovate(pred_keypoint_logits)
         #print('raw 2d pred integral output: ', pred_integral['pose_2d'].shape)
         pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
@@ -215,6 +217,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     print()
     print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     keypoint_loss = torch.nn.functional.mse_loss(pred_integral, kps)
+    #print()
+    print('raw loss', keypoint_loss)
 
 
 
@@ -227,6 +231,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
         normalizer = valid.numel()
     keypoint_loss /= normalizer
 
+    print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
+    print()
     return keypoint_loss
 
 
