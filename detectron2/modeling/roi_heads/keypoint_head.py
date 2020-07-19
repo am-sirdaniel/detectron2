@@ -171,7 +171,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     print('raw kps shape', kps.shape)
     #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
     s1, s2 = kps.shape[0], kps.shape[1] #shape
-    kps = kps.view(s1,s2, -1)[valid]
+    kps = kps.view(s1*s2, -1)[valid]
     print('kps removed shape', kps.shape)
 
     keypoint_loss = torch.nn.functional.mse_loss(pred_integral, kps)
