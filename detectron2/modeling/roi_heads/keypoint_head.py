@@ -84,8 +84,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     N, K, H, W = pred_keypoint_logits.shape
     pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
-    print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][0:2],  pred_keypoint_logits[valid][-2:])
-    print('pred_keypoint_logits[valid]', keypoint_targets[valid][0:2],  keypoint_targets[valid][-2:])
+    #print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][0:2],  pred_keypoint_logits[valid][-2:])
+    #print('keypoint_targets[valid]', keypoint_targets[valid][0:2],  keypoint_targets[valid][-2:])
     keypoint_loss = F.cross_entropy(
         pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
     )
@@ -122,7 +122,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     num_instances_per_image = [len(i) for i in pred_instances]
     print('num_instances_per_image', num_instances_per_image)
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    print('keypoint_results', keypoint_results.shape)
+    print('keypoint_results', keypoint_results)
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
