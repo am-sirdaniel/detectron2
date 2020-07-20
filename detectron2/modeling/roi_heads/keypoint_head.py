@@ -3,6 +3,7 @@ from typing import List
 import torch
 from torch import nn
 from torch.nn import functional as F
+import torch.nn.functional as nn
 
 from detectron2.config import configurable
 from detectron2.layers import Conv2d, ConvTranspose2d, cat, interpolate
@@ -41,25 +42,26 @@ def integral_2d_innovate(heatmap):
     #print('2d Innovate being used')
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
     h, w = heatmap.shape[2], heatmap.shape[3]
-    print('origin logits bf heatmap', heatmap.shape)
+    #print('origin logits bf heatmap', heatmap.shape)
 
-     #implementing softmax 
-    try:
-        max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
-        heatmap = heatmap - max_
-    except:
-        #return 0
-        try:
-            print('heatmap', heatmap.shape)
-            print(torch.max(heatmap, dim=-1))
-            heatmap =  heatmap - torch.max(heatmap, dim=-1)[0]
-        except:
-            print('heatmap', heatmap.shape)
-            print(heatmap)
-    
-    exp_heatmap = torch.exp(heatmap)
-    h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
-    
+     #implementing softmax (this was for a batch)
+    # max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+    # heatmap = heatmap - max_
+
+    # exp_heatmap = torch.exp(heatmap)
+    # h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
+
+    #James softmax for per e.g ankle heatmap
+    tempheat = torch.reshape(heatmap, (heatmap.shape[0],heatmap.shape[1], -1))
+    #print(tempheat.shape)
+    tempheat = torch.reshape(tempheat, (heatmap.shape[0]*heatmap.shape[1], -1))
+    #print(tempheat.shape)
+    h_norm = nn.softmax(tempheat.float(),1)
+
+    #reshape back
+    h_norm = torch.reshape(h_norm, (heatmap.shape[0],heatmap.shape[1], -1))
+    h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
+        
     #DISCRETE FORM of the Integral Equation
     # all locations p in the domain, 
     x_list = torch.linspace(0,1,h).cuda()#Why 0 and 1? it is easy to manipulate values btw 0 and 1
@@ -280,6 +282,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     out = integral_2d_innovate(pred_keypoint_logits)
     heatmap_norm = out['probabilitymap']
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
+    #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
 
