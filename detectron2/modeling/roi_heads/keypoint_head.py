@@ -5,6 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 #import torch.nn.functional as nn
 
+
 from detectron2.config import configurable
 from detectron2.layers import Conv2d, ConvTranspose2d, cat, interpolate
 from detectron2.structures import Instances, heatmaps_to_keypoints
@@ -56,7 +57,7 @@ def integral_2d_innovate(heatmap):
     #print(tempheat.shape)
     tempheat = torch.reshape(tempheat, (heatmap.shape[0]*heatmap.shape[1], -1))
     #print(tempheat.shape)
-    h_norm = F.nn.softmax(tempheat.float(),1)
+    h_norm = nn.functional.softmax(tempheat.float(),1)
 
     #reshape back
     h_norm = torch.reshape(h_norm, (heatmap.shape[0],heatmap.shape[1], -1))
