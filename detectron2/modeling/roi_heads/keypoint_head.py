@@ -41,11 +41,14 @@ def integral_2d_innovate(heatmap):
     #print('2d Innovate being used')
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
     h, w = heatmap.shape[2], heatmap.shape[3]
+    print('origin logits bf heatmap', heatmap.shape)
 
      #implementing softmax 
     try:
-        heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+        max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+        heatmap = heatmap - max_
     except:
+        #return 0
         try:
             print('heatmap', heatmap.shape)
             print(torch.max(heatmap, dim=-1))
@@ -270,6 +273,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #keypoint_results = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
     #num_instances_per_image = [len(i) for i in pred_instances]
     #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    
+
     out = integral_2d_innovate(pred_keypoint_logits)
     heatmap_norm = out['probabilitymap']
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
