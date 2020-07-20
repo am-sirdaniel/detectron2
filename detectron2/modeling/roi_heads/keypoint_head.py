@@ -43,7 +43,16 @@ def integral_2d_innovate(heatmap):
     h, w = heatmap.shape[2], heatmap.shape[3]
 
      #implementing softmax 
-    heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+    try:
+        heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+    except:
+        try:print('heatmap', heatmap.shape)
+            print(torch.max(heatmap, dim=-1))
+            heatmap =  heatmap - torch.max(heatmap, dim=-1)[0]
+        except:
+            print('heatmap', heatmap.shape)
+            print(heatmap)
+    
     exp_heatmap = torch.exp(heatmap)
     h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
     
@@ -281,7 +290,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
-        print('=== keypoint_results_per_image:', keypoint_results_per_image.shape)
+        print('keypoint_results_per_image', keypoint_results_per_image.shape)
         #print('type:', instances_per_image.pred_keypoints.shape)
         instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
         
