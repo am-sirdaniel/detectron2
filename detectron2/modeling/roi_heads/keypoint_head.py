@@ -46,7 +46,8 @@ def integral_2d_innovate(heatmap):
     try:
         heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     except:
-        try:print('heatmap', heatmap.shape)
+        try:
+            print('heatmap', heatmap.shape)
             print(torch.max(heatmap, dim=-1))
             heatmap =  heatmap - torch.max(heatmap, dim=-1)[0]
         except:
