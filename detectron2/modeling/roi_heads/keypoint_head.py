@@ -178,8 +178,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
     if use_2d:
         print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
         print('using 2d innovate')
+        print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
         pred_integral = integral_2d_innovate(pred_keypoint_logits)
-        #print('raw 2d pred integral output: ', pred_integral['pose_2d'].shape)
+        print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
         pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
     else: #3d
@@ -284,8 +285,10 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     heatmap_norm = out['probabilitymap']
     print('heatmap_norm shape', heatmap_norm.shape)
     print('hip heatmap_norm', heatmap_norm[0][0][0])
-    #scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    #print('scores: ', scores)
+    print('heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
+    #scores for the ankle etc
+    scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
+    print('scores: ', scores)
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
