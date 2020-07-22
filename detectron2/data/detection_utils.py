@@ -46,7 +46,10 @@ def read_image(file_name, format=None):
         image (np.ndarray): an HWC image in the given format.
     """
     with PathManager.open(file_name, "rb") as f:
-        image = Image.open(f)
+        try:
+            image = Image.open(f)
+        except: #lets skip unfound image s for now
+            return None
 
         # capture and ignore this bug: https://github.com/python-pillow/Pillow/issues/3973
         try:
