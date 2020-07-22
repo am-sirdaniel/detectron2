@@ -303,7 +303,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    print('pred keypoint_results after split', keypoint_results.shape)
+    #print('pred keypoint_results after split', keypoint_results.shape)
     print('sample pred keypoint_results after split', keypoint_results[0][0])
     print('pred_instances', len(pred_instances))
 
