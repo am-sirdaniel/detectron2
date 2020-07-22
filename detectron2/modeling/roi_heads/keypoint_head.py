@@ -211,7 +211,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, use_2d = Tru
 
     #kps = (kps - kp_mean)/kp_std
 
-    #Min-max Normalization]
+    #Min-max Normalization using Full Image
     xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
 
     partx = kps[:,:,0:1]
@@ -300,9 +300,11 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
-    print('keypoint_results', keypoint_results.shape)
+    print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    print('pred keypoint_results after split', keypoint_results.shape)
+    print('sample pred keypoint_results after split', keypoint_results[0][0])
     print('pred_instances', len(pred_instances))
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
