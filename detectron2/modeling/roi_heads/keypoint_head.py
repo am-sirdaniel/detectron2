@@ -1,10 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 from typing import List
 import torch
 from torch import nn
 from torch.nn import functional as F
-from __future__ import absolute_import
-from __future__ import print_function
+
 #import torch.nn.functional as nn
 
 
