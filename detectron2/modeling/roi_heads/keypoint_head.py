@@ -528,7 +528,7 @@ class BaseKeypointRCNNHead(nn.Module):
                 None if self.loss_normalizer == "visible" else num_images * self.loss_normalizer
             )
             return {
-                "loss_keypoint": keypoint_rcnn_loss(x, instances, normalizer=normalizer, self.model2, self.optimizer2)
+                "loss_keypoint": keypoint_rcnn_loss(x, instances,  self.model2, self.optimizer2, normalizer=normalizer)
                 * self.loss_weight
             }
         else:
