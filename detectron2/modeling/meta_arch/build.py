@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import torch
+from torch import nn
 
 from detectron2.utils.registry import Registry
 
