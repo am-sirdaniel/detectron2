@@ -94,6 +94,7 @@ class LinearModel(nn.Module):
 
         return y
 
+#Combine 2 architectures together
 class CombinedWithLinear(nn.Module):
 	"""docstring for Combined"""
 	def __init__(self, maskrcc_model):
