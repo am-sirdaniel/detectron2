@@ -272,12 +272,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, model2, opti
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     print('pose2d_loss (global relative coords): ', pose2d_loss)
 
-	#3D loss
-	p3d = torch.cat(p3d)
-	m1, m2 = p3d.shape[0], p3d.shape[1] #shape
-	#exclude invlaid
-	kps = kps.view(m1*m2, -1)[valid]
-	kps = kps.view(N,K,-1)
+    #3D loss
+    p3d = torch.cat(p3d)
+    m1, m2 = p3d.shape[0], p3d.shape[1] #shape 
+    #exclude invlaid
+    kps = kps.view(m1*m2, -1)[valid]
+    kps = kps.view(N,K,-1)
     #mean-std normalization for 3d targets
     mean_3d = np.array([[  389.9240,   253.0210,   409.7404],
         [  232.3254,   427.8259,   225.9603],
@@ -318,16 +318,16 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, model2, opti
     print('3d pred integral output: ', pred_pose3d.shape, pred_pose3d[0[0]])
     #pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
 
-	criterion = nn.MSELoss(size_average=True).cuda()
-	# calculate loss
-	#optimizer.zero_grad()
-	pose3d_loss = criterion(pred_pose3d, targets)
-	print('raw loss', pose3d_loss)
-	#losses.update(loss.item(), inputs.size(0))
-	#loss.backward()
-	#if max_norm:
-	 #   nn.utils.clip_grad_norm(model2.parameters(), max_norm=1)
-	#optimizer2.step()
+    criterion = nn.MSELoss(size_average=True).cuda()
+    # calculate loss
+    #optimizer.zero_grad()
+    pose3d_loss = criterion(pred_pose3d, targets)
+    print('raw loss', pose3d_loss)
+    #losses.update(loss.item(), inputs.size(0))
+    #loss.backward()
+    #if max_norm:
+    #nn.utils.clip_grad_norm(model2.parameters(), max_norm=1)
+    #optimizer2.step()
 
     
     
