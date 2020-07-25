@@ -175,13 +175,13 @@ def integral_2d_innovate(heatmap, rois):
     #return relative global coordinates
     return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
 
-def effective_2d_3d(pose2D_normalized, model2):
+def effective_2d_3d(pose2D_normalized):
 	pred_pose3d = model2(pose2D_normalized.float())
 
 	return pred_pose3d
 
 
-def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, model2, optimizer2):
+def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     """
     Arguments:
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
@@ -316,7 +316,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, model2, opti
     pred_integral = pred_integral.squeeze(-1) #(N,K,2)
     #flattened vector
     pose2D_normalized = (pred_integral.view(N, -1))*2-1 # bring it to -1...1
-    pred_pose3d = effective_2d_3d(pose2D_normalized, model2)
+    pred_pose3d = effective_2d_3d(pose2D_normalized)
 
     print('3d pred integral output: ', pred_pose3d.shape, pred_pose3d[0[0]])
     #pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
@@ -495,8 +495,8 @@ class BaseKeypointRCNNHead(nn.Module):
         }
 
         #2nd model
-        self.model2 = cfg.model2
-        self.optimizer2 = cfg.optimizer2
+        #self.model2 = cfg.model2
+        #self.optimizer2 = cfg.optimizer2
 
         normalize_by_visible = (
             cfg.MODEL.ROI_KEYPOINT_HEAD.NORMALIZE_LOSS_BY_VISIBLE_KEYPOINTS
@@ -531,9 +531,9 @@ class BaseKeypointRCNNHead(nn.Module):
                 None if self.loss_normalizer == "visible" else num_images * self.loss_normalizer
             )
             return {
-                "loss_keypoint": keypoint_rcnn_loss(x, instances,  self.model2, self.optimizer2, normalizer=normalizer)
+                "loss_keypoint": keypoint_rcnn_loss(x, instances, normalizer=normalizer)
                 * self.loss_weight
-            }
+            } #self.model2, self.optimizer2
         else:
             keypoint_rcnn_inference(x, instances)
             return instances
@@ -601,3 +601,4 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
