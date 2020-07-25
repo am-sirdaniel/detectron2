@@ -272,14 +272,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, model2, opti
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     print('pose2d_loss (global relative coords): ', pose2d_loss)
 
-
-
-    #3D loss
+	#3D loss
 	p3d = torch.cat(p3d)
-    m1, m2 = p3d.shape[0], p3d.shape[1] #shape
-    #exclude invlaid
-    kps = kps.view(m1*m2, -1)[valid]
-    kps = kps.view(N,K,-1)
+	m1, m2 = p3d.shape[0], p3d.shape[1] #shape
+	#exclude invlaid
+	kps = kps.view(m1*m2, -1)[valid]
+	kps = kps.view(N,K,-1)
     #mean-std normalization for 3d targets
     mean_3d = np.array([[  389.9240,   253.0210,   409.7404],
         [  232.3254,   427.8259,   225.9603],
