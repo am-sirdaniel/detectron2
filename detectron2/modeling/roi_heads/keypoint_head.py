@@ -208,7 +208,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     keypoint_side_len = pred_keypoint_logits.shape[2]
 
     # flatten all bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    print('check for box rois: ', [b.Boxes.tensor for b in instances])
+    print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
     bboxes_flat = cat([b.Boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
@@ -601,6 +601,9 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
 
 
 
