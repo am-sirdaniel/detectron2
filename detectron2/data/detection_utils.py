@@ -400,10 +400,11 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
         target.gt_keypoints = Keypoints(kpts)
 
     if len(annos) and "pose_3d" in annos[0]:
-        print('SEEN POSE3D IN DATA JSON')
         kpts = [obj.get("pose_3d", []) for obj in annos]
         #target.gt_pose3d = Keypoints(kpts)
         target.gt_pose3d = kpts
+        print('target.gt_pose3d', target.gt_pose3d)
+
 
     return target
 
