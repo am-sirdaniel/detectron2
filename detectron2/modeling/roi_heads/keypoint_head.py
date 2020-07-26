@@ -153,6 +153,8 @@ def integral_2d_innovate(heatmap, rois):
         
     #DISCRETE FORM of the Integral Equation
     # computing integral in relative global coordinates directly
+
+    print('rois in integral function ', rois)
     start_x = rois[:, 0]
     start_y = rois[:, 1]
     end_x = rois[:, 2]
@@ -209,7 +211,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     # flatten all bboxes from all images together (list[Boxes] -> Rx4 tensor)
     print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
-    bboxes_flat = cat([b.Boxes.tensor for b in instances], dim=0)
+    bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
     #M = len(instances)
@@ -601,12 +603,6 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
-
-
 
 
 
