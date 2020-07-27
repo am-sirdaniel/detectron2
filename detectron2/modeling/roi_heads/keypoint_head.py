@@ -180,21 +180,21 @@ def integral_2d_innovate(heatmap, rois):
 
     # transforming back to global relative coords
     print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x.shape, start_x.shape)
-    #i_ = i_ * scale_inv_x + start_x
-    #j_ = j_ * scale_inv_y + start_y
+    i_ = i_ * scale_inv_x + start_x
+    j_ = j_ * scale_inv_y + start_y
 
     #Modified arrangement
     pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
                                        #[j,j,j,,,]]
 
-    partx = pose[:,:,0:1]
-    partx = partx * scale_inv_x + start_x
+    # partx = pose[:,:,0:1]
+    # partx = partx * scale_inv_x + start_x
 
-    party = pose[:,:,1:2]
-    party = party * scale_inv_y + start_y
+    # party = pose[:,:,1:2]
+    # party = party * scale_inv_y + start_y
 
-    pose = torch.stack((partx,  party), dim = -2)
-    pose = pose.squeeze(-1) #(N,K,2)
+    # pose = torch.stack((partx,  party), dim = -2)
+    # pose = pose.squeeze(-1) #(N,K,2)
 
     #return relative global coordinates
     print('pose relative global coordinates', pose[0][0])
