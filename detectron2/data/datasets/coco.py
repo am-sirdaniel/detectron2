@@ -155,7 +155,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
             assert anno.get("ignore", 0) == 0, '"ignore" in COCO json file is not supported.'
 
             obj = {key: anno[key] for key in ann_keys if key in anno}
-            print('obj keys: ', obj.keys)
+            #print('obj keys: ', obj.keys)
 
             segm = anno.get("segmentation", None)
             if segm:  # either list[list[float]] or dict(RLE)
