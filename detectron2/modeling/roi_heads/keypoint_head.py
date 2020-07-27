@@ -153,7 +153,8 @@ def integral_2d_innovate(heatmap, rois):
     h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
     
     #Any NAN in hnorm
-    print('HNORM contains nan ?:', ['YES' if torch.sum(np.isnan(h_norm.cpu())) else 'NO'])
+    test = h_norm.cpu().detach().numpy()
+    print('HNORM contains nan ?:', ['YES' if torch.sum(np.isnan(test)) else 'NO'])
 
     #DISCRETE FORM of the Integral Equation
     # computing integral in relative global coordinates directly
