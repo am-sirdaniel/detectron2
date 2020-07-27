@@ -361,11 +361,11 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     classes = torch.tensor(classes, dtype=torch.int64)
     target.gt_classes = classes
 
-    print('detection utils annotations', annos[0])
-    print('detection utils other fields: ', target.get_fields())
-    kpts = [obj.get("pose_3d", []) for obj in annos]
-    target.set('gt_pose3d', kpts)
-    print('detection utils fields + 3d kps: ', target.get_fields())
+    #print('detection utils annotations', annos[0])
+    #print('detection utils other fields: ', target.get_fields())
+    #kpts = [obj.get("pose_3d", []) for obj in annos]
+    #target.set('gt_pose3d', kpts)
+    #print('detection utils fields + 3d kps: ', target.get_fields())
 
     if len(annos) and "segmentation" in annos[0]:
         segms = [obj["segmentation"] for obj in annos]
@@ -405,14 +405,14 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
         kpts = [obj.get("keypoints", []) for obj in annos]
         target.gt_keypoints = Keypoints(kpts)
 
-    # if len(annos) and "pose_3d" in annos[0]:
-    #     print('annotations', annos[0])
-    #     kpts = [obj.get("pose_3d", []) for obj in annos]
-    #     #target.gt_pose3d = Keypoints(kpts)
-    #     target.set('gt_pose3d',kpts)
-    #     # target.gt_pose3d = kpts
-    #     print('other fields: ', target.get_fields())
-    #     print('target.gt_pose3d:', target.gt_pose3d)
+    if len(annos) and "pose_3d" in annos[0]:
+        #print('annotations', annos[0])
+        kpts = [obj.get("pose_3d", []) for obj in annos]
+        #target.gt_pose3d = Keypoints(kpts)
+        target.set('gt_pose3d',kpts)
+        # target.gt_pose3d = kpts
+        print('before fields: ', target.get_fields())
+        print('new target.gt_pose3d:', target.gt_pose3d)
 
 
     return target
