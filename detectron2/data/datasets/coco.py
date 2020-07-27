@@ -182,7 +182,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
             if pose_3d:  # list[int]
                 #for idx, v in enumerate(pose_3d):
                 #    pose_3d[idx] = torch.Tensor(v)
-                pose_3d = torch.Tensor(pose_3d)
+                pose_3d = pose_3d
                 obj["pose_3d"] = pose_3d
 
             obj["bbox_mode"] = BoxMode.XYWH_ABS
