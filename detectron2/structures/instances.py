@@ -131,10 +131,15 @@ class Instances:
 
         ret = Instances(self._image_size)
         for k, v in self._fields.items():
-            print('k',k)
-            print('v',v)
-            print('item', item)
-            ret.set(k, v[item])
+            
+            try:
+                ret.set(k, v[item])
+            except:
+                print('LIST INDEX BUG ERROR')
+                print('k',k)
+                print('v',v)
+                print('item', item)
+                ret.set(k, torch.Tensor(v)[item])
         return ret
 
     def __len__(self) -> int:
