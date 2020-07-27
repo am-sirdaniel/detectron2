@@ -369,6 +369,16 @@ def convert_to_coco_dict(dataset_name):
                 else:
                     num_keypoints = sum(kp > 0 for kp in keypoints[2::3])
 
+            if "pose_3d" in annotation:
+                pose_3d = annotation["pose_3d"]  # list[int]
+                # for idx, v in enumerate(keypoints):
+                #     if idx % 3 != 2:
+                #         # COCO's segmentation coordinates are floating points in [0, H or W],
+                #         # but keypoint coordinates are integers in [0, H-1 or W-1]
+                #         # For COCO format consistency we substract 0.5
+                #         # https://github.com/facebookresearch/detectron2/pull/175#issuecomment-551202163
+                #         keypoints[idx] = v - 0.5
+
             # COCO requirement:
             #   linking annotations to images
             #   "id" field must start with 1
@@ -383,6 +393,9 @@ def convert_to_coco_dict(dataset_name):
             if "keypoints" in annotation:
                 coco_annotation["keypoints"] = keypoints
                 coco_annotation["num_keypoints"] = num_keypoints
+
+            if "pose_3d" in annotation:
+                coco_annotation["pose_3d"] = pose_3d
 
             if "segmentation" in annotation:
                 coco_annotation["segmentation"] = annotation["segmentation"]
@@ -475,3 +488,4 @@ if __name__ == "__main__":
         vis = visualizer.draw_dataset_dict(d)
         fpath = os.path.join(dirname, os.path.basename(d["file_name"]))
         vis.save(fpath)
+
