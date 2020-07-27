@@ -178,7 +178,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                 
             pose_3d = anno.get("pose_3d", None)
             if pose_3d:  # list[int]
-                for idx, v in enumerate(pose_3d):
+                #for idx, v in enumerate(pose_3d):
 #                     if idx % 3 != 2:
 #                         # COCO's segmentation coordinates are floating points in [0, H or W],
 #                         # but keypoint coordinates are integers in [0, H-1 or W-1]
