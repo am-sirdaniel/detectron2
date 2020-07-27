@@ -30,7 +30,6 @@ def load_coco_json(json_file, image_root, dataset_name=None, extra_annotation_ke
     Load a json file with COCO's instances annotation format.
     Currently supports instance detection, instance segmentation,
     and person keypoints annotations.
-
     Args:
         json_file (str): full path to the json file in COCO instances annotation format.
         image_root (str or path-like): the directory where the images in this json file exists.
@@ -41,11 +40,9 @@ def load_coco_json(json_file, image_root, dataset_name=None, extra_annotation_ke
             loaded into the dataset dict (besides "iscrowd", "bbox", "keypoints",
             "category_id", "segmentation"). The values for these keys will be returned as-is.
             For example, the densepose annotations are loaded in this way.
-
     Returns:
         list[dict]: a list of dicts in Detectron2 standard dataset dicts format. (See
         `Using Custom Datasets </tutorials/datasets.html>`_ )
-
     Notes:
         1. This function does not read the image files.
            The results do not have the "image" field.
@@ -129,7 +126,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
 
     dataset_dicts = []
 
-    ann_keys = ["iscrowd", "bbox", "keypoints", "category_id, pose_3d"] + (extra_annotation_keys or [])
+    ann_keys = ["iscrowd", "bbox", "keypoints", "category_id"] + (extra_annotation_keys or [])
 
     num_instances_without_valid_segmentation = 0
 
@@ -154,11 +151,14 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
             assert anno.get("ignore", 0) == 0, '"ignore" in COCO json file is not supported.'
 
             obj = {key: anno[key] for key in ann_keys if key in anno}
-            print('obj keys: ', obj)
 
             segm = anno.get("segmentation", None)
             if segm:  # either list[list[float]] or dict(RLE)
-                if not isinstance(segm, dict):
+                if isinstance(segm, dict):
+                    if isinstance(segm["counts"], list):
+                        # convert to compressed RLE
+                        segm = mask_util.frPyObjects(segm, *segm["size"])
+                else:
                     # filter out invalid polygons (< 3 points)
                     segm = [poly for poly in segm if len(poly) % 2 == 0 and len(poly) >= 6]
                     if len(segm) == 0:
@@ -176,22 +176,9 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                         # add 0.5 to convert to floating point coordinates.
                         keypts[idx] = v + 0.5
                 obj["keypoints"] = keypts
-                
-            pose_3d = anno.get("pose_3d", None)
-            if pose_3d:  # list[int]
-                #for idx, v in enumerate(pose_3d):
-#                     if idx % 3 != 2:
-#                         # COCO's segmentation coordinates are floating points in [0, H or W],
-#                         # but keypoint coordinates are integers in [0, H-1 or W-1]
-#                         # Therefore we assume the coordinates are "pixel indices" and
-#                         # add 0.5 to convert to floating point coordinates.
-#                         keypts[idx] = v + 0.5
-                obj["pose_3d"] = pose_3d
 
             obj["bbox_mode"] = BoxMode.XYWH_ABS
             if id_map:
-                print('obj["category_id"]', obj.keys())
-                print('id_map', id_map)
                 obj["category_id"] = id_map[obj["category_id"]]
             objs.append(obj)
         record["annotations"] = objs
@@ -199,10 +186,11 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
 
     if num_instances_without_valid_segmentation > 0:
         logger.warning(
-            "Filtered out {} instances without valid segmentation. "
-            "There might be issues in your dataset generation process.".format(
+            "Filtered out {} instances without valid segmentation. ".format(
                 num_instances_without_valid_segmentation
             )
+            + "There might be issues in your dataset generation process. "
+            "A valid polygon should be a list[float] with even length >= 6."
         )
     return dataset_dicts
 
@@ -214,7 +202,6 @@ def load_sem_seg(gt_root, image_root, gt_ext="png", image_ext="jpg"):
     as input images. Ground truth and input images are matched using file paths relative to
     "gt_root" and "image_root" respectively without taking into account file extensions.
     This works for COCO as well as some other datasets.
-
     Args:
         gt_root (str): full path to ground truth semantic segmentation files. Semantic segmentation
             annotations are stored as images with integer values in pixels that represent
@@ -222,12 +209,10 @@ def load_sem_seg(gt_root, image_root, gt_ext="png", image_ext="jpg"):
         image_root (str): the directory where the input images are.
         gt_ext (str): file extension for ground truth annotations.
         image_ext (str): file extension for input images.
-
     Returns:
         list[dict]:
             a list of dicts in detectron2 standard format without instance-level
             annotation.
-
     Notes:
         1. This function does not read the image and ground truth files.
            The results do not have the "image" and "sem_seg" fields.
@@ -287,13 +272,10 @@ def convert_to_coco_dict(dataset_name):
     """
     Convert an instance detection/segmentation or keypoint detection dataset
     in detectron2's standard format into COCO json format.
-
     Generic dataset description can be found here:
     https://detectron2.readthedocs.io/tutorials/datasets.html#register-a-dataset
-
     COCO data format description can be found here:
     http://cocodataset.org/#format-data
-
     Args:
         dataset_name (str):
             name of the source dataset
@@ -331,7 +313,7 @@ def convert_to_coco_dict(dataset_name):
         }
         coco_images.append(coco_image)
 
-        anns_per_image = image_dict["annotations"]
+        anns_per_image = image_dict.get("annotations", [])
         for annotation in anns_per_image:
             # create a new dict with only COCO fields
             coco_annotation = {}
@@ -372,16 +354,6 @@ def convert_to_coco_dict(dataset_name):
                 else:
                     num_keypoints = sum(kp > 0 for kp in keypoints[2::3])
 
-            if "pose_3d" in annotation:
-                pose_3d = annotation["pose_3d"]  # list[int]
-                # for idx, v in enumerate(keypoints):
-                #     if idx % 3 != 2:
-                #         # COCO's segmentation coordinates are floating points in [0, H or W],
-                #         # but keypoint coordinates are integers in [0, H-1 or W-1]
-                #         # For COCO format consistency we substract 0.5
-                #         # https://github.com/facebookresearch/detectron2/pull/175#issuecomment-551202163
-                #         keypoints[idx] = v - 0.5
-
             # COCO requirement:
             #   linking annotations to images
             #   "id" field must start with 1
@@ -397,34 +369,28 @@ def convert_to_coco_dict(dataset_name):
                 coco_annotation["keypoints"] = keypoints
                 coco_annotation["num_keypoints"] = num_keypoints
 
-            if "pose_3d" in annotation:
-                coco_annotation["pose_3d"] = pose_3d
-
             if "segmentation" in annotation:
-                coco_annotation["segmentation"] = annotation["segmentation"]
-                if isinstance(coco_annotation["segmentation"], dict):  # RLE
-                    coco_annotation["segmentation"]["counts"] = coco_annotation["segmentation"][
-                        "counts"
-                    ].decode("ascii")
+                seg = coco_annotation["segmentation"] = annotation["segmentation"]
+                if isinstance(seg, dict):  # RLE
+                    counts = seg["counts"]
+                    if not isinstance(counts, str):
+                        # make it json-serializable
+                        seg["counts"] = counts.decode("ascii")
 
             coco_annotations.append(coco_annotation)
 
     logger.info(
         "Conversion finished, "
-        f"num images: {len(coco_images)}, num annotations: {len(coco_annotations)}"
+        f"#images: {len(coco_images)}, #annotations: {len(coco_annotations)}"
     )
 
     info = {
         "date_created": str(datetime.datetime.now()),
         "description": "Automatically generated COCO json file for Detectron2.",
     }
-    coco_dict = {
-        "info": info,
-        "images": coco_images,
-        "annotations": coco_annotations,
-        "categories": categories,
-        "licenses": None,
-    }
+    coco_dict = {"info": info, "images": coco_images, "categories": categories, "licenses": None}
+    if len(coco_annotations) > 0:
+        coco_dict["annotations"] = coco_annotations
     return coco_dict
 
 
@@ -432,7 +398,6 @@ def convert_to_coco_json(dataset_name, output_file, allow_cached=True):
     """
     Converts dataset into COCO format and saves it to a json file.
     dataset_name must be registered in DatasetCatalog and in detectron2's standard format.
-
     Args:
         dataset_name:
             reference from the config file to the catalogs
@@ -463,11 +428,9 @@ def convert_to_coco_json(dataset_name, output_file, allow_cached=True):
 if __name__ == "__main__":
     """
     Test the COCO json dataset loader.
-
     Usage:
         python -m detectron2.data.datasets.coco \
             path/to/json path/to/image_root dataset_name
-
         "dataset_name" can be "coco_2014_minival_100", or other
         pre-registered ones
     """
