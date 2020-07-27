@@ -187,6 +187,7 @@ def integral_2d_innovate(heatmap, rois):
                                        #[j,j,j,,,]]
 
     #return relative global coordinates
+    print('pose_2d relative coords', pose)
     return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
 
 def effective_2d_3d(pose2D_normalized):
