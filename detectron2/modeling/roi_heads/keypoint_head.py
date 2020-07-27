@@ -156,19 +156,31 @@ def integral_2d_innovate(heatmap, rois):
 
     print('rois in integral function ', rois)
     start_x = rois[:, 0]
-    start_y = rois[:, 1]
-    end_x = rois[:, 2]
-    end_y = rois[:, 3]
+	start_y = rois[:, 1]
 
-    # all locations p in the domain, 
-    x_list = torch.linspace(start_x,end_x, h).cuda()
-    y_list = torch.linspace(start_y,end_y, w).cuda()
+	scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
+	scale_y = 1 / (rois[:, 3] - rois[:, 1])
+
+	scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
+	scale_inv_y = (rois[:, 3] - rois[:, 1])
+
+    # # all locations p in the domain, 
+    # x_list = torch.linspace(0,1, h).cuda()
+    # y_list = torch.linspace(0,1, w).cuda()
+
+    #Our choice (0->1) ROI coordinates 
+	x_list = torch.linspace(0,1, h).cuda()
+	y_list = torch.linspace(0,1, w).cuda()
     # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
     i,j = torch.meshgrid(x_list, y_list)
 
     #weighted by their probabilities.
     i_ = torch.sum(i*h_norm, dim=(-1,-2))
     j_ = torch.sum(j*h_norm, dim=(-1,-2))
+
+    # transforming back to global relative coords
+	i_ = i_ * scale_inv_x + start_x
+	j_ = j_ * scale_inv_y + start_y
 
     #Modified arrangement
     pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,],
