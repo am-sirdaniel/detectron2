@@ -131,6 +131,7 @@ class Instances:
 
         ret = Instances(self._image_size)
         for k, v in self._fields.items():
+            print('k,v, item', k, v, item)
             ret.set(k, v[item])
         return ret
 
