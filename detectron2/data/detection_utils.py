@@ -1,488 +1,578 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-import contextlib
-import datetime
-import io
-import json
+
+"""
+Common data processing utilities that are used in a
+typical object detection data pipeline.
+"""
 import logging
 import numpy as np
-import os
 import pycocotools.mask as mask_util
-from fvcore.common.file_io import PathManager, file_lock
-from fvcore.common.timer import Timer
+import torch
+from fvcore.common.file_io import PathManager
 from PIL import Image
 
-from detectron2.structures import Boxes, BoxMode, PolygonMasks
+from detectron2.structures import (
+    BitMasks,
+    Boxes,
+    BoxMode,
+    Instances,
+    Keypoints,
+    PolygonMasks,
+    RotatedBoxes,
+    polygons_to_bitmask,
+)
 
-from .. import DatasetCatalog, MetadataCatalog
+from . import transforms as T
+from .catalog import MetadataCatalog
 
-"""
-This file contains functions to parse COCO-format annotations into dicts in "Detectron2 format".
-"""
+__all__ = [
+    "SizeMismatchError",
+    "convert_image_to_rgb",
+    "check_image_size",
+    "transform_proposals",
+    "transform_instance_annotations",
+    "annotations_to_instances",
+    "annotations_to_instances_rotated",
+    "build_augmentation",
+    "build_transform_gen",
+    "create_keypoint_hflip_indices",
+    "filter_empty_instances",
+    "read_image",
+]
 
 
-logger = logging.getLogger(__name__)
-
-__all__ = ["load_coco_json", "load_sem_seg", "convert_to_coco_json"]
-
-
-def load_coco_json(json_file, image_root, dataset_name=None, extra_annotation_keys=None):
+class SizeMismatchError(ValueError):
     """
-    Load a json file with COCO's instances annotation format.
-    Currently supports instance detection, instance segmentation,
-    and person keypoints annotations.
+    When loaded image has difference width/height compared with annotation.
+    """
 
+
+# https://en.wikipedia.org/wiki/YUV#SDTV_with_BT.601
+_M_RGB2YUV = [[0.299, 0.587, 0.114], [-0.14713, -0.28886, 0.436], [0.615, -0.51499, -0.10001]]
+_M_YUV2RGB = [[1.0, 0.0, 1.13983], [1.0, -0.39465, -0.58060], [1.0, 2.03211, 0.0]]
+
+# https://www.exiv2.org/tags.html
+_EXIF_ORIENT = 274  # exif 'Orientation' tag
+
+
+def convert_PIL_to_numpy(image, format):
+    """
+    Convert PIL image to numpy array of target format.
     Args:
-        json_file (str): full path to the json file in COCO instances annotation format.
-        image_root (str or path-like): the directory where the images in this json file exists.
-        dataset_name (str): the name of the dataset (e.g., coco_2017_train).
-            If provided, this function will also put "thing_classes" into
-            the metadata associated with this dataset.
-        extra_annotation_keys (list[str]): list of per-annotation keys that should also be
-            loaded into the dataset dict (besides "iscrowd", "bbox", "keypoints",
-            "category_id", "segmentation"). The values for these keys will be returned as-is.
-            For example, the densepose annotations are loaded in this way.
-
+        image (PIL.Image): a PIL image
+        format (str): the format of output image
     Returns:
-        list[dict]: a list of dicts in Detectron2 standard dataset dicts format. (See
-        `Using Custom Datasets </tutorials/datasets.html>`_ )
-
-    Notes:
-        1. This function does not read the image files.
-           The results do not have the "image" field.
+        (np.ndarray): also see `read_image`
     """
-    from pycocotools.coco import COCO
+    if format is not None:
+        # PIL only supports RGB, so convert to RGB and flip channels over below
+        conversion_format = format
+        if format in ["BGR", "YUV-BT.601"]:
+            conversion_format = "RGB"
+        image = image.convert(conversion_format)
+    image = np.asarray(image)
+    # PIL squeezes out the channel dimension for "L", so make it HWC
+    if format == "L":
+        image = np.expand_dims(image, -1)
 
-    timer = Timer()
-    json_file = PathManager.get_local_path(json_file)
-    with contextlib.redirect_stdout(io.StringIO()):
-        coco_api = COCO(json_file)
-    if timer.seconds() > 1:
-        logger.info("Loading {} takes {:.2f} seconds.".format(json_file, timer.seconds()))
+    # handle formats not supported by PIL
+    elif format == "BGR":
+        # flip channels if needed
+        image = image[:, :, ::-1]
+    elif format == "YUV-BT.601":
+        image = image / 255.0
+        image = np.dot(image, np.array(_M_RGB2YUV).T)
 
-    id_map = None
-    if dataset_name is not None:
-        meta = MetadataCatalog.get(dataset_name)
-        cat_ids = sorted(coco_api.getCatIds())
-        cats = coco_api.loadCats(cat_ids)
-        # The categories in a custom json file may not be sorted.
-        thing_classes = [c["name"] for c in sorted(cats, key=lambda x: x["id"])]
-        meta.thing_classes = thing_classes
-
-        # In COCO, certain category ids are artificially removed,
-        # and by convention they are always ignored.
-        # We deal with COCO's id issue and translate
-        # the category ids to contiguous ids in [0, 80).
-
-        # It works by looking at the "categories" field in the json, therefore
-        # if users' own json also have incontiguous ids, we'll
-        # apply this mapping as well but print a warning.
-        if not (min(cat_ids) == 1 and max(cat_ids) == len(cat_ids)):
-            if "coco" not in dataset_name:
-                logger.warning(
-                    """
-Category ids in annotations are not in [1, #categories]! We'll apply a mapping for you.
-"""
-                )
-        id_map = {v: i for i, v in enumerate(cat_ids)}
-        meta.thing_dataset_id_to_contiguous_id = id_map
-
-    # sort indices for reproducible results
-    img_ids = sorted(coco_api.imgs.keys())
-    # imgs is a list of dicts, each looks something like:
-    # {'license': 4,
-    #  'url': 'http://farm6.staticflickr.com/5454/9413846304_881d5e5c3b_z.jpg',
-    #  'file_name': 'COCO_val2014_000000001268.jpg',
-    #  'height': 427,
-    #  'width': 640,
-    #  'date_captured': '2013-11-17 05:57:24',
-    #  'id': 1268}
-    imgs = coco_api.loadImgs(img_ids)
-    # anns is a list[list[dict]], where each dict is an annotation
-    # record for an object. The inner list enumerates the objects in an image
-    # and the outer list enumerates over images. Example of anns[0]:
-    # [{'segmentation': [[192.81,
-    #     247.09,
-    #     ...
-    #     219.03,
-    #     249.06]],
-    #   'area': 1035.749,
-    #   'iscrowd': 0,
-    #   'image_id': 1268,
-    #   'bbox': [192.81, 224.8, 74.73, 33.43],
-    #   'category_id': 16,
-    #   'id': 42986},
-    #  ...]
-    anns = [coco_api.imgToAnns[img_id] for img_id in img_ids]
-
-    if "minival" not in json_file:
-        # The popular valminusminival & minival annotations for COCO2014 contain this bug.
-        # However the ratio of buggy annotations there is tiny and does not affect accuracy.
-        # Therefore we explicitly white-list them.
-        ann_ids = [ann["id"] for anns_per_image in anns for ann in anns_per_image]
-        assert len(set(ann_ids)) == len(ann_ids), "Annotation ids in '{}' are not unique!".format(
-            json_file
-        )
-
-    imgs_anns = list(zip(imgs, anns))
-
-    logger.info("Loaded {} images in COCO format from {}".format(len(imgs_anns), json_file))
-
-    dataset_dicts = []
-
-    ann_keys = ["iscrowd", "bbox", "keypoints", "category_id", "pose_3d"] + (extra_annotation_keys or [])
-
-    num_instances_without_valid_segmentation = 0
-
-    for (img_dict, anno_dict_list) in imgs_anns:
-        record = {}
-        record["file_name"] = os.path.join(image_root, img_dict["file_name"])
-        record["height"] = img_dict["height"]
-        record["width"] = img_dict["width"]
-        image_id = record["image_id"] = img_dict["id"]
-
-        objs = []
-        for anno in anno_dict_list:
-            # Check that the image_id in this annotation is the same as
-            # the image_id we're looking at.
-            # This fails only when the data parsing logic or the annotation file is buggy.
-
-            # The original COCO valminusminival2014 & minival2014 annotation files
-            # actually contains bugs that, together with certain ways of using COCO API,
-            # can trigger this assertion.
-            assert anno["image_id"] == image_id
-
-            assert anno.get("ignore", 0) == 0, '"ignore" in COCO json file is not supported.'
-
-            obj = {key: anno[key] for key in ann_keys if key in anno}
-            print('obj keys: ', obj.keys)
-
-            segm = anno.get("segmentation", None)
-            if segm:  # either list[list[float]] or dict(RLE)
-                if not isinstance(segm, dict):
-                    # filter out invalid polygons (< 3 points)
-                    segm = [poly for poly in segm if len(poly) % 2 == 0 and len(poly) >= 6]
-                    if len(segm) == 0:
-                        num_instances_without_valid_segmentation += 1
-                        continue  # ignore this instance
-                obj["segmentation"] = segm
-
-            keypts = anno.get("keypoints", None)
-            if keypts:  # list[int]
-                for idx, v in enumerate(keypts):
-                    if idx % 3 != 2:
-                        # COCO's segmentation coordinates are floating points in [0, H or W],
-                        # but keypoint coordinates are integers in [0, H-1 or W-1]
-                        # Therefore we assume the coordinates are "pixel indices" and
-                        # add 0.5 to convert to floating point coordinates.
-                        keypts[idx] = v + 0.5
-                obj["keypoints"] = keypts
-                
-            pose_3d = anno.get("pose_3d", None)
-            if pose_3d:  # list[int]
-                for idx, v in enumerate(pose_3d):
-                    pose_3d[idx] = torch.Tensor(v)
-                obj["pose_3d"] = pose_3d
-
-            obj["bbox_mode"] = BoxMode.XYWH_ABS
-            if id_map:
-                print('obj["category_id"]', obj.keys())
-                print('id_map', id_map)
-                obj["category_id"] = id_map[obj["category_id"]]
-            objs.append(obj)
-        record["annotations"] = objs
-        dataset_dicts.append(record)
-
-    if num_instances_without_valid_segmentation > 0:
-        logger.warning(
-            "Filtered out {} instances without valid segmentation. "
-            "There might be issues in your dataset generation process.".format(
-                num_instances_without_valid_segmentation
-            )
-        )
-    return dataset_dicts
+    return image
 
 
-def load_sem_seg(gt_root, image_root, gt_ext="png", image_ext="jpg"):
+def convert_image_to_rgb(image, format):
     """
-    Load semantic segmentation datasets. All files under "gt_root" with "gt_ext" extension are
-    treated as ground truth annotations and all files under "image_root" with "image_ext" extension
-    as input images. Ground truth and input images are matched using file paths relative to
-    "gt_root" and "image_root" respectively without taking into account file extensions.
-    This works for COCO as well as some other datasets.
-
+    Convert an image from given format to RGB.
     Args:
-        gt_root (str): full path to ground truth semantic segmentation files. Semantic segmentation
-            annotations are stored as images with integer values in pixels that represent
-            corresponding semantic labels.
-        image_root (str): the directory where the input images are.
-        gt_ext (str): file extension for ground truth annotations.
-        image_ext (str): file extension for input images.
-
+        image (np.ndarray or Tensor): an HWC image
+        format (str): the format of input image, also see `read_image`
     Returns:
-        list[dict]:
-            a list of dicts in detectron2 standard format without instance-level
-            annotation.
-
-    Notes:
-        1. This function does not read the image and ground truth files.
-           The results do not have the "image" and "sem_seg" fields.
+        (np.ndarray): (H,W,3) RGB image in 0-255 range, can be either float or uint8
     """
-
-    # We match input images with ground truth based on their relative filepaths (without file
-    # extensions) starting from 'image_root' and 'gt_root' respectively.
-    def file2id(folder_path, file_path):
-        # extract relative path starting from `folder_path`
-        image_id = os.path.normpath(os.path.relpath(file_path, start=folder_path))
-        # remove file extension
-        image_id = os.path.splitext(image_id)[0]
-        return image_id
-
-    input_files = sorted(
-        (os.path.join(image_root, f) for f in PathManager.ls(image_root) if f.endswith(image_ext)),
-        key=lambda file_path: file2id(image_root, file_path),
-    )
-    gt_files = sorted(
-        (os.path.join(gt_root, f) for f in PathManager.ls(gt_root) if f.endswith(gt_ext)),
-        key=lambda file_path: file2id(gt_root, file_path),
-    )
-
-    assert len(gt_files) > 0, "No annotations found in {}.".format(gt_root)
-
-    # Use the intersection, so that val2017_100 annotations can run smoothly with val2017 images
-    if len(input_files) != len(gt_files):
-        logger.warn(
-            "Directory {} and {} has {} and {} files, respectively.".format(
-                image_root, gt_root, len(input_files), len(gt_files)
-            )
-        )
-        input_basenames = [os.path.basename(f)[: -len(image_ext)] for f in input_files]
-        gt_basenames = [os.path.basename(f)[: -len(gt_ext)] for f in gt_files]
-        intersect = list(set(input_basenames) & set(gt_basenames))
-        # sort, otherwise each worker may obtain a list[dict] in different order
-        intersect = sorted(intersect)
-        logger.warn("Will use their intersection of {} files.".format(len(intersect)))
-        input_files = [os.path.join(image_root, f + image_ext) for f in intersect]
-        gt_files = [os.path.join(gt_root, f + gt_ext) for f in intersect]
-
-    logger.info(
-        "Loaded {} images with semantic segmentation from {}".format(len(input_files), image_root)
-    )
-
-    dataset_dicts = []
-    for (img_path, gt_path) in zip(input_files, gt_files):
-        record = {}
-        record["file_name"] = img_path
-        record["sem_seg_file_name"] = gt_path
-        dataset_dicts.append(record)
-
-    return dataset_dicts
-
-
-def convert_to_coco_dict(dataset_name):
-    """
-    Convert an instance detection/segmentation or keypoint detection dataset
-    in detectron2's standard format into COCO json format.
-
-    Generic dataset description can be found here:
-    https://detectron2.readthedocs.io/tutorials/datasets.html#register-a-dataset
-
-    COCO data format description can be found here:
-    http://cocodataset.org/#format-data
-
-    Args:
-        dataset_name (str):
-            name of the source dataset
-            Must be registered in DatastCatalog and in detectron2's standard format.
-            Must have corresponding metadata "thing_classes"
-    Returns:
-        coco_dict: serializable dict in COCO json format
-    """
-
-    dataset_dicts = DatasetCatalog.get(dataset_name)
-    metadata = MetadataCatalog.get(dataset_name)
-
-    # unmap the category mapping ids for COCO
-    if hasattr(metadata, "thing_dataset_id_to_contiguous_id"):
-        reverse_id_mapping = {v: k for k, v in metadata.thing_dataset_id_to_contiguous_id.items()}
-        reverse_id_mapper = lambda contiguous_id: reverse_id_mapping[contiguous_id]  # noqa
+    if isinstance(image, torch.Tensor):
+        image = image.cpu().numpy()
+    if format == "BGR":
+        image = image[:, :, [2, 1, 0]]
+    elif format == "YUV-BT.601":
+        image = np.dot(image, np.array(_M_YUV2RGB).T)
+        image = image * 255.0
     else:
-        reverse_id_mapper = lambda contiguous_id: contiguous_id  # noqa
-
-    categories = [
-        {"id": reverse_id_mapper(id), "name": name}
-        for id, name in enumerate(metadata.thing_classes)
-    ]
-
-    logger.info("Converting dataset dicts into COCO format")
-    coco_images = []
-    coco_annotations = []
-
-    for image_id, image_dict in enumerate(dataset_dicts):
-        coco_image = {
-            "id": image_dict.get("image_id", image_id),
-            "width": image_dict["width"],
-            "height": image_dict["height"],
-            "file_name": image_dict["file_name"],
-        }
-        coco_images.append(coco_image)
-
-        anns_per_image = image_dict["annotations"]
-        for annotation in anns_per_image:
-            # create a new dict with only COCO fields
-            coco_annotation = {}
-
-            # COCO requirement: XYWH box format
-            bbox = annotation["bbox"]
-            bbox_mode = annotation["bbox_mode"]
-            bbox = BoxMode.convert(bbox, bbox_mode, BoxMode.XYWH_ABS)
-
-            # COCO requirement: instance area
-            if "segmentation" in annotation:
-                # Computing areas for instances by counting the pixels
-                segmentation = annotation["segmentation"]
-                # TODO: check segmentation type: RLE, BinaryMask or Polygon
-                if isinstance(segmentation, list):
-                    polygons = PolygonMasks([segmentation])
-                    area = polygons.area()[0].item()
-                elif isinstance(segmentation, dict):  # RLE
-                    area = mask_util.area(segmentation).item()
-                else:
-                    raise TypeError(f"Unknown segmentation type {type(segmentation)}!")
-            else:
-                # Computing areas using bounding boxes
-                bbox_xy = BoxMode.convert(bbox, BoxMode.XYWH_ABS, BoxMode.XYXY_ABS)
-                area = Boxes([bbox_xy]).area()[0].item()
-
-            if "keypoints" in annotation:
-                keypoints = annotation["keypoints"]  # list[int]
-                for idx, v in enumerate(keypoints):
-                    if idx % 3 != 2:
-                        # COCO's segmentation coordinates are floating points in [0, H or W],
-                        # but keypoint coordinates are integers in [0, H-1 or W-1]
-                        # For COCO format consistency we substract 0.5
-                        # https://github.com/facebookresearch/detectron2/pull/175#issuecomment-551202163
-                        keypoints[idx] = v - 0.5
-                if "num_keypoints" in annotation:
-                    num_keypoints = annotation["num_keypoints"]
-                else:
-                    num_keypoints = sum(kp > 0 for kp in keypoints[2::3])
-
-            if "pose_3d" in annotation:
-                pose_3d = annotation["pose_3d"]  # list[int]
-                # for idx, v in enumerate(keypoints):
-                #     if idx % 3 != 2:
-                #         # COCO's segmentation coordinates are floating points in [0, H or W],
-                #         # but keypoint coordinates are integers in [0, H-1 or W-1]
-                #         # For COCO format consistency we substract 0.5
-                #         # https://github.com/facebookresearch/detectron2/pull/175#issuecomment-551202163
-                #         keypoints[idx] = v - 0.5
-
-            # COCO requirement:
-            #   linking annotations to images
-            #   "id" field must start with 1
-            coco_annotation["id"] = len(coco_annotations) + 1
-            coco_annotation["image_id"] = coco_image["id"]
-            coco_annotation["bbox"] = [round(float(x), 3) for x in bbox]
-            coco_annotation["area"] = float(area)
-            coco_annotation["iscrowd"] = annotation.get("iscrowd", 0)
-            coco_annotation["category_id"] = reverse_id_mapper(annotation["category_id"])
-
-            # Add optional fields
-            if "keypoints" in annotation:
-                coco_annotation["keypoints"] = keypoints
-                coco_annotation["num_keypoints"] = num_keypoints
-
-            if "pose_3d" in annotation:
-                coco_annotation["pose_3d"] = pose_3d
-
-            if "segmentation" in annotation:
-                coco_annotation["segmentation"] = annotation["segmentation"]
-                if isinstance(coco_annotation["segmentation"], dict):  # RLE
-                    coco_annotation["segmentation"]["counts"] = coco_annotation["segmentation"][
-                        "counts"
-                    ].decode("ascii")
-
-            coco_annotations.append(coco_annotation)
-
-    logger.info(
-        "Conversion finished, "
-        f"num images: {len(coco_images)}, num annotations: {len(coco_annotations)}"
-    )
-
-    info = {
-        "date_created": str(datetime.datetime.now()),
-        "description": "Automatically generated COCO json file for Detectron2.",
-    }
-    coco_dict = {
-        "info": info,
-        "images": coco_images,
-        "annotations": coco_annotations,
-        "categories": categories,
-        "licenses": None,
-    }
-    return coco_dict
+        if format == "L":
+            image = image[:, :, 0]
+        image = image.astype(np.uint8)
+        image = np.asarray(Image.fromarray(image, mode=format).convert("RGB"))
+    return image
 
 
-def convert_to_coco_json(dataset_name, output_file, allow_cached=True):
+def _apply_exif_orientation(image):
     """
-    Converts dataset into COCO format and saves it to a json file.
-    dataset_name must be registered in DatasetCatalog and in detectron2's standard format.
-
+    Applies the exif orientation correctly.
+    This code exists per the bug:
+      https://github.com/python-pillow/Pillow/issues/3973
+    with the function `ImageOps.exif_transpose`. The Pillow source raises errors with
+    various methods, especially `tobytes`
+    Function based on:
+      https://github.com/wkentaro/labelme/blob/v4.5.4/labelme/utils/image.py#L59
+      https://github.com/python-pillow/Pillow/blob/7.1.2/src/PIL/ImageOps.py#L527
     Args:
-        dataset_name:
-            reference from the config file to the catalogs
-            must be registered in DatasetCatalog and in detectron2's standard format
-        output_file: path of json file that will be saved to
-        allow_cached: if json file is already present then skip conversion
+        image (PIL.Image): a PIL image
+    Returns:
+        (PIL.Image): the PIL image with exif orientation applied, if applicable
     """
+    if not hasattr(image, "getexif"):
+        return image
 
-    # TODO: The dataset or the conversion script *may* change,
-    # a checksum would be useful for validating the cached data
+    exif = image.getexif()
 
-    PathManager.mkdirs(os.path.dirname(output_file))
-    with file_lock(output_file):
-        if PathManager.exists(output_file) and allow_cached:
-            logger.warning(
-                f"Using previously cached COCO format annotations at '{output_file}'. "
-                "You need to clear the cache file if your dataset has been modified."
+    if exif is None:
+        return image
+
+    orientation = exif.get(_EXIF_ORIENT)
+
+    method = {
+        2: Image.FLIP_LEFT_RIGHT,
+        3: Image.ROTATE_180,
+        4: Image.FLIP_TOP_BOTTOM,
+        5: Image.TRANSPOSE,
+        6: Image.ROTATE_270,
+        7: Image.TRANSVERSE,
+        8: Image.ROTATE_90,
+    }.get(orientation)
+
+    if method is not None:
+        return image.transpose(method)
+    return image
+
+
+def read_image(file_name, format=None):
+    """
+    Read an image into the given format.
+    Will apply rotation and flipping if the image has such exif information.
+    Args:
+        file_name (str): image file path
+        format (str): one of the supported image modes in PIL, or "BGR" or "YUV-BT.601".
+    Returns:
+        image (np.ndarray): an HWC image in the given format, which is 0-255, uint8 for
+            supported image modes in PIL or "BGR"; float (0-1 for Y) for YUV-BT.601.
+    """
+    with PathManager.open(file_name, "rb") as f:
+        image = Image.open(f)
+
+        # work around this bug: https://github.com/python-pillow/Pillow/issues/3973
+        image = _apply_exif_orientation(image)
+
+        return convert_PIL_to_numpy(image, format)
+
+
+def check_image_size(dataset_dict, image):
+    """
+    Raise an error if the image does not match the size specified in the dict.
+    """
+    if "width" in dataset_dict or "height" in dataset_dict:
+        image_wh = (image.shape[1], image.shape[0])
+        expected_wh = (dataset_dict["width"], dataset_dict["height"])
+        if not image_wh == expected_wh:
+            raise SizeMismatchError(
+                "Mismatched (W,H){}, got {}, expect {}".format(
+                    " for image " + dataset_dict["file_name"]
+                    if "file_name" in dataset_dict
+                    else "",
+                    image_wh,
+                    expected_wh,
+                )
             )
+
+    # To ensure bbox always remap to original image size
+    if "width" not in dataset_dict:
+        dataset_dict["width"] = image.shape[1]
+    if "height" not in dataset_dict:
+        dataset_dict["height"] = image.shape[0]
+
+
+def transform_proposals(dataset_dict, image_shape, transforms, *, proposal_topk, min_box_size=0):
+    """
+    Apply transformations to the proposals in dataset_dict, if any.
+    Args:
+        dataset_dict (dict): a dict read from the dataset, possibly
+            contains fields "proposal_boxes", "proposal_objectness_logits", "proposal_bbox_mode"
+        image_shape (tuple): height, width
+        transforms (TransformList):
+        proposal_topk (int): only keep top-K scoring proposals
+        min_box_size (int): proposals with either side smaller than this
+            threshold are removed
+    The input dict is modified in-place, with abovementioned keys removed. A new
+    key "proposals" will be added. Its value is an `Instances`
+    object which contains the transformed proposals in its field
+    "proposal_boxes" and "objectness_logits".
+    """
+    if "proposal_boxes" in dataset_dict:
+        # Transform proposal boxes
+        boxes = transforms.apply_box(
+            BoxMode.convert(
+                dataset_dict.pop("proposal_boxes"),
+                dataset_dict.pop("proposal_bbox_mode"),
+                BoxMode.XYXY_ABS,
+            )
+        )
+        boxes = Boxes(boxes)
+        objectness_logits = torch.as_tensor(
+            dataset_dict.pop("proposal_objectness_logits").astype("float32")
+        )
+
+        boxes.clip(image_shape)
+        keep = boxes.nonempty(threshold=min_box_size)
+        boxes = boxes[keep]
+        objectness_logits = objectness_logits[keep]
+
+        proposals = Instances(image_shape)
+        proposals.proposal_boxes = boxes[:proposal_topk]
+        proposals.objectness_logits = objectness_logits[:proposal_topk]
+        dataset_dict["proposals"] = proposals
+
+
+def transform_instance_annotations(
+    annotation, transforms, image_size, *, keypoint_hflip_indices=None
+):
+    """
+    Apply transforms to box, segmentation and keypoints annotations of a single instance.
+    It will use `transforms.apply_box` for the box, and
+    `transforms.apply_coords` for segmentation polygons & keypoints.
+    If you need anything more specially designed for each data structure,
+    you'll need to implement your own version of this function or the transforms.
+    Args:
+        annotation (dict): dict of instance annotations for a single instance.
+            It will be modified in-place.
+        transforms (TransformList or list[Transform]):
+        image_size (tuple): the height, width of the transformed image
+        keypoint_hflip_indices (ndarray[int]): see `create_keypoint_hflip_indices`.
+    Returns:
+        dict:
+            the same input dict with fields "bbox", "segmentation", "keypoints"
+            transformed according to `transforms`.
+            The "bbox_mode" field will be set to XYXY_ABS.
+    """
+    if isinstance(transforms, (tuple, list)):
+        transforms = T.TransformList(transforms)
+    # bbox is 1d (per-instance bounding box)
+    bbox = BoxMode.convert(annotation["bbox"], annotation["bbox_mode"], BoxMode.XYXY_ABS)
+    # clip transformed bbox to image size
+    bbox = transforms.apply_box(np.array([bbox]))[0].clip(min=0)
+    annotation["bbox"] = np.minimum(bbox, list(image_size + image_size)[::-1])
+    annotation["bbox_mode"] = BoxMode.XYXY_ABS
+
+    if "segmentation" in annotation:
+        # each instance contains 1 or more polygons
+        segm = annotation["segmentation"]
+        if isinstance(segm, list):
+            # polygons
+            polygons = [np.asarray(p).reshape(-1, 2) for p in segm]
+            annotation["segmentation"] = [
+                p.reshape(-1) for p in transforms.apply_polygons(polygons)
+            ]
+        elif isinstance(segm, dict):
+            # RLE
+            mask = mask_util.decode(segm)
+            mask = transforms.apply_segmentation(mask)
+            assert tuple(mask.shape[:2]) == image_size
+            annotation["segmentation"] = mask
         else:
-            logger.info(f"Converting annotations of dataset '{dataset_name}' to COCO format ...)")
-            coco_dict = convert_to_coco_dict(dataset_name)
+            raise ValueError(
+                "Cannot transform segmentation of type '{}'!"
+                "Supported types are: polygons as list[list[float] or ndarray],"
+                " COCO-style RLE as a dict.".format(type(segm))
+            )
 
-            logger.info(f"Caching COCO format annotations at '{output_file}' ...")
-            with PathManager.open(output_file, "w") as f:
-                json.dump(coco_dict, f)
+    if "keypoints" in annotation:
+        keypoints = transform_keypoint_annotations(
+            annotation["keypoints"], transforms, image_size, keypoint_hflip_indices
+        )
+        annotation["keypoints"] = keypoints
+
+    return annotation
 
 
-if __name__ == "__main__":
+def transform_keypoint_annotations(keypoints, transforms, image_size, keypoint_hflip_indices=None):
     """
-    Test the COCO json dataset loader.
-
-    Usage:
-        python -m detectron2.data.datasets.coco \
-            path/to/json path/to/image_root dataset_name
-
-        "dataset_name" can be "coco_2014_minival_100", or other
-        pre-registered ones
+    Transform keypoint annotations of an image.
+    If a keypoint is transformed out of image boundary, it will be marked "unlabeled" (visibility=0)
+    Args:
+        keypoints (list[float]): Nx3 float in Detectron2's Dataset format.
+            Each point is represented by (x, y, visibility).
+        transforms (TransformList):
+        image_size (tuple): the height, width of the transformed image
+        keypoint_hflip_indices (ndarray[int]): see `create_keypoint_hflip_indices`.
+            When `transforms` includes horizontal flip, will use the index
+            mapping to flip keypoints.
     """
-    from detectron2.utils.logger import setup_logger
-    from detectron2.utils.visualizer import Visualizer
-    import detectron2.data.datasets  # noqa # add pre-defined metadata
-    import sys
+    # (N*3,) -> (N, 3)
+    keypoints = np.asarray(keypoints, dtype="float64").reshape(-1, 3)
+    keypoints_xy = transforms.apply_coords(keypoints[:, :2])
 
-    logger = setup_logger(name=__name__)
-    assert sys.argv[3] in DatasetCatalog.list()
-    meta = MetadataCatalog.get(sys.argv[3])
+    # Set all out-of-boundary points to "unlabeled"
+    inside = (keypoints_xy >= np.array([0, 0])) & (keypoints_xy <= np.array(image_size[::-1]))
+    inside = inside.all(axis=1)
+    keypoints[:, :2] = keypoints_xy
+    keypoints[:, 2][~inside] = 0
 
-    dicts = load_coco_json(sys.argv[1], sys.argv[2], sys.argv[3])
-    logger.info("Done loading {} samples.".format(len(dicts)))
+    # This assumes that HorizFlipTransform is the only one that does flip
+    do_hflip = sum(isinstance(t, T.HFlipTransform) for t in transforms.transforms) % 2 == 1
 
-    dirname = "coco-data-vis"
-    os.makedirs(dirname, exist_ok=True)
-    for d in dicts:
-        img = np.array(Image.open(d["file_name"]))
-        visualizer = Visualizer(img, metadata=meta)
-        vis = visualizer.draw_dataset_dict(d)
-        fpath = os.path.join(dirname, os.path.basename(d["file_name"]))
-        vis.save(fpath)
+    # Alternative way: check if probe points was horizontally flipped.
+    # probe = np.asarray([[0.0, 0.0], [image_width, 0.0]])
+    # probe_aug = transforms.apply_coords(probe.copy())
+    # do_hflip = np.sign(probe[1][0] - probe[0][0]) != np.sign(probe_aug[1][0] - probe_aug[0][0])  # noqa
+
+    # If flipped, swap each keypoint with its opposite-handed equivalent
+    if do_hflip:
+        assert keypoint_hflip_indices is not None
+        keypoints = keypoints[keypoint_hflip_indices, :]
+
+    # Maintain COCO convention that if visibility == 0 (unlabeled), then x, y = 0
+    keypoints[keypoints[:, 2] == 0] = 0
+    return keypoints
+
+
+def annotations_to_instances(annos, image_size, mask_format="polygon"):
+    """
+    Create an :class:`Instances` object used by the models,
+    from instance annotations in the dataset dict.
+    Args:
+        annos (list[dict]): a list of instance annotations in one image, each
+            element for one instance.
+        image_size (tuple): height, width
+    Returns:
+        Instances:
+            It will contain fields "gt_boxes", "gt_classes",
+            "gt_masks", "gt_keypoints", if they can be obtained from `annos`.
+            This is the format that builtin models expect.
+    """
+    boxes = [BoxMode.convert(obj["bbox"], obj["bbox_mode"], BoxMode.XYXY_ABS) for obj in annos]
+    target = Instances(image_size)
+    target.gt_boxes = Boxes(boxes)
+
+    classes = [obj["category_id"] for obj in annos]
+    classes = torch.tensor(classes, dtype=torch.int64)
+    target.gt_classes = classes
+
+    #print('detection utils annotations', annos[0])
+    #print('detection utils other fields: ', target.get_fields())
+    #kpts = [obj.get("pose_3d", []) for obj in annos]
+    #target.set('gt_pose3d', kpts)
+    #print('detection utils fields + 3d kps: ', target.get_fields())
+
+    if len(annos) and "segmentation" in annos[0]:
+        segms = [obj["segmentation"] for obj in annos]
+        if mask_format == "polygon":
+            # TODO check type and provide better error
+            masks = PolygonMasks(segms)
+        else:
+            assert mask_format == "bitmask", mask_format
+            masks = []
+            for segm in segms:
+                if isinstance(segm, list):
+                    # polygon
+                    masks.append(polygons_to_bitmask(segm, *image_size))
+                elif isinstance(segm, dict):
+                    # COCO RLE
+                    masks.append(mask_util.decode(segm))
+                elif isinstance(segm, np.ndarray):
+                    assert segm.ndim == 2, "Expect segmentation of 2 dimensions, got {}.".format(
+                        segm.ndim
+                    )
+                    # mask array
+                    masks.append(segm)
+                else:
+                    raise ValueError(
+                        "Cannot convert segmentation of type '{}' to BitMasks!"
+                        "Supported types are: polygons as list[list[float] or ndarray],"
+                        " COCO-style RLE as a dict, or a full-image segmentation mask "
+                        "as a 2D ndarray.".format(type(segm))
+                    )
+            # torch.from_numpy does not support array with negative stride.
+            masks = BitMasks(
+                torch.stack([torch.from_numpy(np.ascontiguousarray(x)) for x in masks])
+            )
+        target.gt_masks = masks
+
+    if len(annos) and "keypoints" in annos[0]:
+        kpts = [obj.get("keypoints", []) for obj in annos]
+        target.gt_keypoints = Keypoints(kpts)
+
+    if len(annos) and "pose_3d" in annos[0]:
+        #print('annotations', annos[0])
+        kpts = [obj.get("pose_3d", []) for obj in annos]
+        #target.gt_pose3d = Keypoints(kpts)
+        target.set('gt_pose3d',kpts)
+        # target.gt_pose3d = kpts
+        #print('before fields: ', target.get_fields())
+        #print('new target.gt_pose3d:', target.gt_pose3d)
+
+
+    return target
+
+
+def annotations_to_instances_rotated(annos, image_size):
+    """
+    Create an :class:`Instances` object used by the models,
+    from instance annotations in the dataset dict.
+    Compared to `annotations_to_instances`, this function is for rotated boxes only
+    Args:
+        annos (list[dict]): a list of instance annotations in one image, each
+            element for one instance.
+        image_size (tuple): height, width
+    Returns:
+        Instances:
+            Containing fields "gt_boxes", "gt_classes",
+            if they can be obtained from `annos`.
+            This is the format that builtin models expect.
+    """
+    boxes = [obj["bbox"] for obj in annos]
+    target = Instances(image_size)
+    boxes = target.gt_boxes = RotatedBoxes(boxes)
+    boxes.clip(image_size)
+
+    classes = [obj["category_id"] for obj in annos]
+    classes = torch.tensor(classes, dtype=torch.int64)
+    target.gt_classes = classes
+
+    return target
+
+
+def filter_empty_instances(instances, by_box=True, by_mask=True, box_threshold=1e-5):
+    """
+    Filter out empty instances in an `Instances` object.
+    Args:
+        instances (Instances):
+        by_box (bool): whether to filter out instances with empty boxes
+        by_mask (bool): whether to filter out instances with empty masks
+        box_threshold (float): minimum width and height to be considered non-empty
+    Returns:
+        Instances: the filtered instances.
+    """
+    assert by_box or by_mask
+    r = []
+    if by_box:
+        r.append(instances.gt_boxes.nonempty(threshold=box_threshold))
+    if instances.has("gt_masks") and by_mask:
+        r.append(instances.gt_masks.nonempty())
+
+    # TODO: can also filter visible keypoints
+
+    if not r:
+        return instances
+    m = r[0]
+    for x in r[1:]:
+        m = m & x
+    return instances[m]
+
+
+def create_keypoint_hflip_indices(dataset_names):
+    """
+    Args:
+        dataset_names (list[str]): list of dataset names
+    Returns:
+        ndarray[int]: a vector of size=#keypoints, storing the
+        horizontally-flipped keypoint indices.
+    """
+
+    check_metadata_consistency("keypoint_names", dataset_names)
+    check_metadata_consistency("keypoint_flip_map", dataset_names)
+
+    meta = MetadataCatalog.get(dataset_names[0])
+    names = meta.keypoint_names
+    # TODO flip -> hflip
+    flip_map = dict(meta.keypoint_flip_map)
+    flip_map.update({v: k for k, v in flip_map.items()})
+    flipped_names = [i if i not in flip_map else flip_map[i] for i in names]
+    flip_indices = [names.index(i) for i in flipped_names]
+    return np.asarray(flip_indices)
+
+
+def gen_crop_transform_with_instance(crop_size, image_size, instance):
+    """
+    Generate a CropTransform so that the cropping region contains
+    the center of the given instance.
+    Args:
+        crop_size (tuple): h, w in pixels
+        image_size (tuple): h, w
+        instance (dict): an annotation dict of one instance, in Detectron2's
+            dataset format.
+    """
+    crop_size = np.asarray(crop_size, dtype=np.int32)
+    bbox = BoxMode.convert(instance["bbox"], instance["bbox_mode"], BoxMode.XYXY_ABS)
+    center_yx = (bbox[1] + bbox[3]) * 0.5, (bbox[0] + bbox[2]) * 0.5
+    assert (
+        image_size[0] >= center_yx[0] and image_size[1] >= center_yx[1]
+    ), "The annotation bounding box is outside of the image!"
+    assert (
+        image_size[0] >= crop_size[0] and image_size[1] >= crop_size[1]
+    ), "Crop size is larger than image size!"
+
+    min_yx = np.maximum(np.floor(center_yx).astype(np.int32) - crop_size, 0)
+    max_yx = np.maximum(np.asarray(image_size, dtype=np.int32) - crop_size, 0)
+    max_yx = np.minimum(max_yx, np.ceil(center_yx).astype(np.int32))
+
+    y0 = np.random.randint(min_yx[0], max_yx[0] + 1)
+    x0 = np.random.randint(min_yx[1], max_yx[1] + 1)
+    return T.CropTransform(x0, y0, crop_size[1], crop_size[0])
+
+
+def check_metadata_consistency(key, dataset_names):
+    """
+    Check that the datasets have consistent metadata.
+    Args:
+        key (str): a metadata key
+        dataset_names (list[str]): a list of dataset names
+    Raises:
+        AttributeError: if the key does not exist in the metadata
+        ValueError: if the given datasets do not have the same metadata values defined by key
+    """
+    if len(dataset_names) == 0:
+        return
+    logger = logging.getLogger(__name__)
+    entries_per_dataset = [getattr(MetadataCatalog.get(d), key) for d in dataset_names]
+    for idx, entry in enumerate(entries_per_dataset):
+        if entry != entries_per_dataset[0]:
+            logger.error(
+                "Metadata '{}' for dataset '{}' is '{}'".format(key, dataset_names[idx], str(entry))
+            )
+            logger.error(
+                "Metadata '{}' for dataset '{}' is '{}'".format(
+                    key, dataset_names[0], str(entries_per_dataset[0])
+                )
+            )
+            raise ValueError("Datasets have different metadata '{}'!".format(key))
+
+
+def build_augmentation(cfg, is_train):
+    """
+    Create a list of default :class:`Augmentation` from config.
+    Now it includes resizing and flipping.
+    Returns:
+        list[Augmentation]
+    """
+    if is_train:
+        min_size = cfg.INPUT.MIN_SIZE_TRAIN
+        max_size = cfg.INPUT.MAX_SIZE_TRAIN
+        sample_style = cfg.INPUT.MIN_SIZE_TRAIN_SAMPLING
+    else:
+        min_size = cfg.INPUT.MIN_SIZE_TEST
+        max_size = cfg.INPUT.MAX_SIZE_TEST
+        sample_style = "choice"
+    augmentation = [T.ResizeShortestEdge(min_size, max_size, sample_style)]
+    if is_train:
+        augmentation.append(T.RandomFlip())
+    return augmentation
+
+
+build_transform_gen = build_augmentation
+"""
+Alias for backward-compatibility.
+"""
