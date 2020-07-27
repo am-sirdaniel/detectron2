@@ -10,6 +10,7 @@ import pycocotools.mask as mask_util
 from fvcore.common.file_io import PathManager, file_lock
 from fvcore.common.timer import Timer
 from PIL import Image
+import torch
 
 from detectron2.structures import Boxes, BoxMode, PolygonMasks
 
