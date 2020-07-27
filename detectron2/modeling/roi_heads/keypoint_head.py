@@ -286,7 +286,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     # if use_2d:
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
-    p#rint('using 2d innovate')
+    #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
