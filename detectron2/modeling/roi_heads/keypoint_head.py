@@ -150,7 +150,10 @@ def integral_2d_innovate(heatmap, rois):
     #reshape back
     h_norm = torch.reshape(h_norm, (heatmap.shape[0],heatmap.shape[1], -1))
     h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
-        
+    
+    #Any NAN in hnorm
+    print('HNORM contains nan ?:', ['YES' if np.sum(np.isnan(h_norm)) else 'NO'])
+
     #DISCRETE FORM of the Integral Equation
     # computing integral in relative global coordinates directly
 
@@ -233,7 +236,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     keypoint_side_len = pred_keypoint_logits.shape[2]
 
     # flatten all bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
+    #print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
@@ -243,10 +246,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        print('other fields:', instances_per_image.get_fields())
+        #print('other fields:', instances_per_image.get_fields())
         #print('can we get image dim programmatically? :', instances_per_image.ke
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
-        print('pose3d_pts shape: ', pose3d_pts.shape)
+        #print('pose3d_pts shape: ', pose3d_pts.shape)
         #reshape
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
 
@@ -302,7 +305,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     print('pose2d_loss (global relative coords): ', pose2d_loss)
 
-    #3D loss
+    # #3D loss
     # p3d = torch.cat(p3d)
     # m1, m2 = p3d.shape[0], p3d.shape[1] #shape 
     # #exclude invlaid
@@ -354,37 +357,37 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     # pose3d_loss = criterion(pred_pose3d, targets)
     # print('raw loss', pose3d_loss)
     # #losses.update(loss.item(), inputs.size(0))
-    # #loss.backward()
-    # #if max_norm:
-    # #nn.utils.clip_grad_norm(model2.parameters(), max_norm=1)
-    # #optimizer2.step()
+    #loss.backward()
+    #if max_norm:
+    #nn.utils.clip_grad_norm(model2.parameters(), max_norm=1)
+    #optimizer2.step()
 
     
     
-    # #print('pred_integral removed shape', pred_integral.shape)
-    # #kps = torch.cat(kps)
+    #print('pred_integral removed shape', pred_integral.shape)
+    #kps = torch.cat(kps)
 
-    # #normalize kps
-    # #All data mean-std normalization
-    # # kp_mean = torch.Tensor([[942.8855, 326.6883],
-    # #     [941.4666, 405.1611],
-    # #     [740.3054, 304.9617],
-    # #     [737.7035, 421.5804],
-    # #     [530.7987, 290.6349],
-    # #     [534.2322, 425.0898]]).cuda()
+    #normalize kps
+    #All data mean-std normalization
+    # kp_mean = torch.Tensor([[942.8855, 326.6883],
+    #     [941.4666, 405.1611],
+    #     [740.3054, 304.9617],
+    #     [737.7035, 421.5804],
+    #     [530.7987, 290.6349],
+    #     [534.2322, 425.0898]]).cuda()
 
-    # # kp_std = torch.Tensor([[ 94.6912,  31.1105],
-    # #     [ 96.2150,  31.2903],
-    # #     [ 89.2333,  28.6181],
-    # #     [ 89.7864,  32.5412],
-    # #     [109.8567,  45.1855],
-    # #     [ 92.0391,  33.6960]]).cuda()
+    # kp_std = torch.Tensor([[ 94.6912,  31.1105],
+    #     [ 96.2150,  31.2903],
+    #     [ 89.2333,  28.6181],
+    #     [ 89.7864,  32.5412],
+    #     [109.8567,  45.1855],
+    #     [ 92.0391,  33.6960]]).cuda()
 
-    # #With Batch mean and std, you wont have fixed values to de-normarlize
+    #With Batch mean and std, you wont have fixed values to de-normarlize
 
-    # #kps = (kps - kp_mean)/kp_std
+    #kps = (kps - kp_mean)/kp_std
 
-    # #Min-max Normalization using Full Image
+    #Min-max Normalization using Full Image
     # xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
 
     # partx = kps[:,:,0:1]
@@ -398,11 +401,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     # kps = kps.squeeze(-1)
 
 
-    # #print('raw kps shape', kps.shape)
-    # #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
-    # #s1, s2 = kps.shape[0], kps.shape[1] #shape
-    # #kps = kps.view(s1*s2, -1)[valid]
-    # #print('kps removed shape', kps.shape)
+    #print('raw kps shape', kps.shape)
+    #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
+    #s1, s2 = kps.shape[0], kps.shape[1] #shape
+    #kps = kps.view(s1*s2, -1)[valid]
+    #print('kps removed shape', kps.shape)
 
 
     # print('pred: ', pred_integral[0:3], pred_integral[-3:])
