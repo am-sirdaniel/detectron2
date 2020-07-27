@@ -133,7 +133,7 @@ def integral_2d_innovate(heatmap, rois):
     h, w = heatmap.shape[2], heatmap.shape[3]
     #print('origin logits bf heatmap', heatmap.shape)
 
-    #implementing softmax (this was for a batch)
+     #implementing softmax (this was for a batch)
     # max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     # heatmap = heatmap - max_
 
@@ -156,21 +156,21 @@ def integral_2d_innovate(heatmap, rois):
 
     print('rois in integral function ', rois)
     start_x = rois[:, 0]
-    start_y = rois[:, 1]
+	start_y = rois[:, 1]
 
-    scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
-    scale_y = 1 / (rois[:, 3] - rois[:, 1])
+	scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
+	scale_y = 1 / (rois[:, 3] - rois[:, 1])
 
-    scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
-    scale_inv_y = (rois[:, 3] - rois[:, 1])
+	scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
+	scale_inv_y = (rois[:, 3] - rois[:, 1])
 
     # # all locations p in the domain, 
     # x_list = torch.linspace(0,1, h).cuda()
     # y_list = torch.linspace(0,1, w).cuda()
 
     #Our choice (0->1) ROI coordinates 
-    x_list = torch.linspace(0,1, h).cuda()
-    y_list = torch.linspace(0,1, w).cuda()
+	x_list = torch.linspace(0,1, h).cuda()
+	y_list = torch.linspace(0,1, w).cuda()
     # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
     i,j = torch.meshgrid(x_list, y_list)
 
@@ -179,15 +179,15 @@ def integral_2d_innovate(heatmap, rois):
     j_ = torch.sum(j*h_norm, dim=(-1,-2))
 
     # transforming back to global relative coords
-    i_ = i_ * scale_inv_x + start_x
-    j_ = j_ * scale_inv_y + start_y
+    print('i, scale_inv_x, start_x', i.shape, scale_inv_x.shape, start_x.shape)
+	i_ = i_ * scale_inv_x + start_x
+	j_ = j_ * scale_inv_y + start_y
 
     #Modified arrangement
     pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,],
                                        #[j,j,j,,,]]
 
     #return relative global coordinates
-    print('pose_2d relative coords', pose)
     return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
 
 def effective_2d_3d(pose2D_normalized):
