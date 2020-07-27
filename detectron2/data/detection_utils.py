@@ -409,7 +409,7 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
         #print('annotations', annos[0])
         kpts = [obj.get("pose_3d", []) for obj in annos]
         #target.gt_pose3d = Keypoints(kpts)
-        target.set('gt_pose3d',kpts)
+        target.set('gt_pose3d',torch.Tensor(kpts))
         # target.gt_pose3d = kpts
         #print('before fields: ', target.get_fields())
         #print('new target.gt_pose3d:', target.gt_pose3d)
