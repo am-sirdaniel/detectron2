@@ -154,7 +154,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
             assert anno.get("ignore", 0) == 0, '"ignore" in COCO json file is not supported.'
 
             obj = {key: anno[key] for key in ann_keys if key in anno}
-            #print('obj keys: ', obj.keys)
+            print('obj keys: ', obj.keys)
 
             segm = anno.get("segmentation", None)
             if segm:  # either list[list[float]] or dict(RLE)
@@ -179,19 +179,14 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                 
             pose_3d = anno.get("pose_3d", None)
             if pose_3d:  # list[int]
-                #for idx, v in enumerate(pose_3d):
-#                     if idx % 3 != 2:
-#                         # COCO's segmentation coordinates are floating points in [0, H or W],
-#                         # but keypoint coordinates are integers in [0, H-1 or W-1]
-#                         # Therefore we assume the coordinates are "pixel indices" and
-#                         # add 0.5 to convert to floating point coordinates.
-#                         keypts[idx] = v + 0.5
+                for idx, v in enumerate(pose_3d):
+                    pose_3d[idx] = torch.Tensor(v)
                 obj["pose_3d"] = pose_3d
 
             obj["bbox_mode"] = BoxMode.XYWH_ABS
             if id_map:
-                #print('obj["category_id"]', obj.keys())
-                #print('id_map', id_map)
+                print('obj["category_id"]', obj.keys())
+                print('id_map', id_map)
                 obj["category_id"] = id_map[obj["category_id"]]
             objs.append(obj)
         record["annotations"] = objs
