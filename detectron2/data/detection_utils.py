@@ -164,6 +164,7 @@ def read_image(file_name, format=None):
     """
     with PathManager.open(file_name, "rb") as f:
         image = Image.open(f)
+        print('check image from detection_utils.py', image)
 
         # work around this bug: https://github.com/python-pillow/Pillow/issues/3973
         image = _apply_exif_orientation(image)
