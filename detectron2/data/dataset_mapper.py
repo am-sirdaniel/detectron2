@@ -122,6 +122,7 @@ class DatasetMapper:
                 if not self.keypoint_on:
                     anno.pop("keypoints", None)
 
+            print('annos in dataset mapper: ', dataset_dict["annotations"])
             # USER: Implement additional transformations if you have other types of data
             annos = [
                 utils.transform_instance_annotations(
