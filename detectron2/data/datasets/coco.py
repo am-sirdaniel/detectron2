@@ -129,7 +129,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
 
     dataset_dicts = []
 
-    ann_keys = ["iscrowd", "bbox", "keypoints", "category_id"] + (extra_annotation_keys or [])
+    ann_keys = ["iscrowd", "bbox", "keypoints", "category_id, pose_3d"] + (extra_annotation_keys or [])
 
     num_instances_without_valid_segmentation = 0
 
@@ -175,6 +175,17 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                         # add 0.5 to convert to floating point coordinates.
                         keypts[idx] = v + 0.5
                 obj["keypoints"] = keypts
+                
+            pose_3d = anno.get("pose_3d", None)
+            if pose_3d:  # list[int]
+                for idx, v in enumerate(pose_3d):
+#                     if idx % 3 != 2:
+#                         # COCO's segmentation coordinates are floating points in [0, H or W],
+#                         # but keypoint coordinates are integers in [0, H-1 or W-1]
+#                         # Therefore we assume the coordinates are "pixel indices" and
+#                         # add 0.5 to convert to floating point coordinates.
+#                         keypts[idx] = v + 0.5
+                obj["pose_3d"] = pose_3d
 
             obj["bbox_mode"] = BoxMode.XYWH_ABS
             if id_map:
