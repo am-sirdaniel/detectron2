@@ -225,7 +225,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
         print('pose3d_pts shape: ', pose3d_pts.shape)
         #reshape
-        pose3d_pts = pose3d_pts.reshape(6,3)
+        pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
 
         #e.g (8,6,3)
         #print('Daniel test keypoints', keypoints.tensor.shape)
