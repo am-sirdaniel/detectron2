@@ -7,6 +7,7 @@ from typing import List
 import torch
 from torch import nn
 from torch.nn import functional as F
+import numpy as np
 
 #import torch.nn.functional as nn
 
@@ -152,7 +153,7 @@ def integral_2d_innovate(heatmap, rois):
     h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
     
     #Any NAN in hnorm
-    print('HNORM contains nan ?:', ['YES' if np.sum(np.isnan(h_norm)) else 'NO'])
+    print('HNORM contains nan ?:', ['YES' if torch.sum(np.isnan(h_norm)) else 'NO'])
 
     #DISCRETE FORM of the Integral Equation
     # computing integral in relative global coordinates directly
