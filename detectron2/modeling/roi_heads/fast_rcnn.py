@@ -186,7 +186,9 @@ class FastRCNNOutputs(object):
         else:
             self.proposals = Boxes(torch.zeros(0, 4, device=self.pred_proposal_deltas.device))
         self._no_instances = len(proposals) == 0  # no instances found
-
+        #DANIEL
+        self._no_instances = len(pred_class_logits) == 0 ## no instances found
+         
     def _log_accuracy(self):
         """
         Log the accuracy metrics to EventStorage.
