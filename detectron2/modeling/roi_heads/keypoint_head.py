@@ -285,9 +285,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
 
     # if use_2d:
-    print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
-    print('using 2d innovate')
-    print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
+    #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
+    p#rint('using 2d innovate')
+    #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
@@ -298,122 +298,123 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #exclude invlaid
     kps = kps.view(s1*s2, -1)[valid]
 
+    print('pred_integral, kps', pred_integral[:5], kps[:5])
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     print('pose2d_loss (global relative coords): ', pose2d_loss)
 
     #3D loss
-    p3d = torch.cat(p3d)
-    m1, m2 = p3d.shape[0], p3d.shape[1] #shape 
-    #exclude invlaid
-    kps = kps.view(m1*m2, -1)[valid]
-    kps = kps.view(N,K,-1)
-    #mean-std normalization for 3d targets
-    mean_3d = np.array([[  389.9240,   253.0210,   409.7404],
-        [  232.3254,   427.8259,   225.9603],
-        [-1170.1398, -1179.4377, -1179.5839],
-        [-1199.9395, -1231.7988, -1242.5614],
-        [ 1241.7291,  1239.4333,   841.8918],
-        [  830.0914,   419.7809,   422.6696]])
+    # p3d = torch.cat(p3d)
+    # m1, m2 = p3d.shape[0], p3d.shape[1] #shape 
+    # #exclude invlaid
+    # kps = kps.view(m1*m2, -1)[valid]
+    # kps = kps.view(N,K,-1)
+    # #mean-std normalization for 3d targets
+    # mean_3d = np.array([[  389.9240,   253.0210,   409.7404],
+    #     [  232.3254,   427.8259,   225.9603],
+    #     [-1170.1398, -1179.4377, -1179.5839],
+    #     [-1199.9395, -1231.7988, -1242.5614],
+    #     [ 1241.7291,  1239.4333,   841.8918],
+    #     [  830.0914,   419.7809,   422.6696]])
 
-    std_3d = np.array([[22.3731, 10.8602, 14.1813],
-        [14.6576, 26.9243, 22.4345],
-        [40.7331, 37.2196, 38.8047],
-        [38.7710, 40.0700, 38.5498],
-        [27.9540, 25.8141, 19.8423],
-        [13.2910,  2.9173,  3.5576]])
+    # std_3d = np.array([[22.3731, 10.8602, 14.1813],
+    #     [14.6576, 26.9243, 22.4345],
+    #     [40.7331, 37.2196, 38.8047],
+    #     [38.7710, 40.0700, 38.5498],
+    #     [27.9540, 25.8141, 19.8423],
+    #     [13.2910,  2.9173,  3.5576]])
 
-    targets = (kps - mean_3d)/std_3d
+    # targets = (kps - mean_3d)/std_3d
 
-    #flattened vector for mse loss
-    targets = kps.view(N,-1)
+    # #flattened vector for mse loss
+    # targets = kps.view(N,-1)
 
-    #simple normalization 
-    #Min-max Normalization for 2D output using Full Image
-    pred_integral = pred_integral.view(N,K,-1)
-    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    # #simple normalization 
+    # #Min-max Normalization for 2D output using Full Image
+    # pred_integral = pred_integral.view(N,K,-1)
+    # xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
 
-    partx = pred_integral[:,:,0:1]
-    partx = (partx - xmin)/(xmax - xmin)
+    # partx = pred_integral[:,:,0:1]
+    # partx = (partx - xmin)/(xmax - xmin)
 
-    party = kps[:,:,1:2]
-    party = (party - ymin)/(ymax - ymin)
+    # party = kps[:,:,1:2]
+    # party = (party - ymin)/(ymax - ymin)
 
-    pred_integral = torch.stack((partx,  party), dim = -2)
-    pred_integral = pred_integral.squeeze(-1) #(N,K,2)
-    #flattened vector
-    pose2D_normalized = (pred_integral.view(N, -1))*2-1 # bring it to -1...1
-    pred_pose3d = effective_2d_3d(pose2D_normalized)
+    # pred_integral = torch.stack((partx,  party), dim = -2)
+    # pred_integral = pred_integral.squeeze(-1) #(N,K,2)
+    # #flattened vector
+    # pose2D_normalized = (pred_integral.view(N, -1))*2-1 # bring it to -1...1
+    # pred_pose3d = effective_2d_3d(pose2D_normalized)
 
-    print('3d pred integral output: ', pred_pose3d.shape, pred_pose3d[0[0]])
-    #pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
+    # print('3d pred integral output: ', pred_pose3d.shape, pred_pose3d[0[0]])
+    # #pred_integral = pred_integral['pose_3d'].view(N * K, -1)[valid]
 
-    criterion = nn.MSELoss(size_average=True).cuda()
-    # calculate loss
-    #optimizer.zero_grad()
-    pose3d_loss = criterion(pred_pose3d, targets)
-    print('raw loss', pose3d_loss)
-    #losses.update(loss.item(), inputs.size(0))
-    #loss.backward()
-    #if max_norm:
-    #nn.utils.clip_grad_norm(model2.parameters(), max_norm=1)
-    #optimizer2.step()
+    # criterion = nn.MSELoss(size_average=True).cuda()
+    # # calculate loss
+    # #optimizer.zero_grad()
+    # pose3d_loss = criterion(pred_pose3d, targets)
+    # print('raw loss', pose3d_loss)
+    # #losses.update(loss.item(), inputs.size(0))
+    # #loss.backward()
+    # #if max_norm:
+    # #nn.utils.clip_grad_norm(model2.parameters(), max_norm=1)
+    # #optimizer2.step()
 
     
     
-    #print('pred_integral removed shape', pred_integral.shape)
-    #kps = torch.cat(kps)
+    # #print('pred_integral removed shape', pred_integral.shape)
+    # #kps = torch.cat(kps)
 
-    #normalize kps
-    #All data mean-std normalization
-    # kp_mean = torch.Tensor([[942.8855, 326.6883],
-    #     [941.4666, 405.1611],
-    #     [740.3054, 304.9617],
-    #     [737.7035, 421.5804],
-    #     [530.7987, 290.6349],
-    #     [534.2322, 425.0898]]).cuda()
+    # #normalize kps
+    # #All data mean-std normalization
+    # # kp_mean = torch.Tensor([[942.8855, 326.6883],
+    # #     [941.4666, 405.1611],
+    # #     [740.3054, 304.9617],
+    # #     [737.7035, 421.5804],
+    # #     [530.7987, 290.6349],
+    # #     [534.2322, 425.0898]]).cuda()
 
-    # kp_std = torch.Tensor([[ 94.6912,  31.1105],
-    #     [ 96.2150,  31.2903],
-    #     [ 89.2333,  28.6181],
-    #     [ 89.7864,  32.5412],
-    #     [109.8567,  45.1855],
-    #     [ 92.0391,  33.6960]]).cuda()
+    # # kp_std = torch.Tensor([[ 94.6912,  31.1105],
+    # #     [ 96.2150,  31.2903],
+    # #     [ 89.2333,  28.6181],
+    # #     [ 89.7864,  32.5412],
+    # #     [109.8567,  45.1855],
+    # #     [ 92.0391,  33.6960]]).cuda()
 
-    #With Batch mean and std, you wont have fixed values to de-normarlize
+    # #With Batch mean and std, you wont have fixed values to de-normarlize
 
-    #kps = (kps - kp_mean)/kp_std
+    # #kps = (kps - kp_mean)/kp_std
 
-    #Min-max Normalization using Full Image
-    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    # #Min-max Normalization using Full Image
+    # xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
 
-    partx = kps[:,:,0:1]
-    partx = (partx - xmin)/(xmax - xmin)
+    # partx = kps[:,:,0:1]
+    # partx = (partx - xmin)/(xmax - xmin)
 
-    party = kps[:,:,1:2]
-    party = (party - ymin)/(ymax - ymin)
+    # party = kps[:,:,1:2]
+    # party = (party - ymin)/(ymax - ymin)
 
-    kps = torch.stack((partx,  party), dim = -2)
-    #print('1st kps', kps.shape)
-    kps = kps.squeeze(-1)
-
-
-    #print('raw kps shape', kps.shape)
-    #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
-    #s1, s2 = kps.shape[0], kps.shape[1] #shape
-    #kps = kps.view(s1*s2, -1)[valid]
-    #print('kps removed shape', kps.shape)
+    # kps = torch.stack((partx,  party), dim = -2)
+    # #print('1st kps', kps.shape)
+    # kps = kps.squeeze(-1)
 
 
-    print('pred: ', pred_integral[0:3], pred_integral[-3:])
-    print('kps: ', kps[0:3], kps[-3:])
-    print()
-    print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
-    #print()
-    print('raw loss', pose2d_loss)
+    # #print('raw kps shape', kps.shape)
+    # #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
+    # #s1, s2 = kps.shape[0], kps.shape[1] #shape
+    # #kps = kps.view(s1*s2, -1)[valid]
+    # #print('kps removed shape', kps.shape)
 
-    #################################################
-    comb_loss = pose2d_loss *0.5 + pose3d_loss *0.5
+
+    # print('pred: ', pred_integral[0:3], pred_integral[-3:])
+    # print('kps: ', kps[0:3], kps[-3:])
+    # print()
+    # print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
+    # pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
+    # #print()
+    # print('raw loss', pose2d_loss)
+
+    # #################################################
+    # comb_loss = pose2d_loss *0.5 + pose3d_loss *0.5
 
     # keypoint_loss = F.cross_entropy(
     #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
