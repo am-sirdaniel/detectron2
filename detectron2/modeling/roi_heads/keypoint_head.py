@@ -220,6 +220,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
+        print('other fields:', instances_per_image.get_fields())
         #print('can we get image dim programmatically? :', instances_per_image.ke
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
         print('pose3d_pts shape: ', pose3d_pts.shape)
