@@ -221,6 +221,7 @@ def get_detection_dataset_dicts(
             that match each dataset in `dataset_names`.
     """
     assert len(dataset_names)
+    print('dataset_names in data build.py', dataset_names)
     dataset_dicts = [DatasetCatalog.get(dataset_name) for dataset_name in dataset_names]
     for dataset_name, dicts in zip(dataset_names, dataset_dicts):
         assert len(dicts), "Dataset '{}' is empty!".format(dataset_name)
@@ -234,6 +235,7 @@ def get_detection_dataset_dicts(
         ]
 
     dataset_dicts = list(itertools.chain.from_iterable(dataset_dicts))
+    print('dataset_dicts in build.py', dataset_dicts)
 
     has_instances = "annotations" in dataset_dicts[0]
     # Keep images without instance-level GT if the dataset has semantic labels.
