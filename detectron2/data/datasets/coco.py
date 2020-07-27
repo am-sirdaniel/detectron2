@@ -180,14 +180,15 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
                 
             pose_3d = anno.get("pose_3d", None)
             if pose_3d:  # list[int]
-                for idx, v in enumerate(pose_3d):
-                    pose_3d[idx] = torch.Tensor(v)
+                #for idx, v in enumerate(pose_3d):
+                #    pose_3d[idx] = torch.Tensor(v)
+                pose_3d = torch.Tensor(pose_3d)
                 obj["pose_3d"] = pose_3d
 
             obj["bbox_mode"] = BoxMode.XYWH_ABS
             if id_map:
-                print('obj["category_id"]', obj.keys())
-                print('id_map', id_map)
+                #print('obj["category_id"]', obj.keys())
+                #print('id_map', id_map)
                 obj["category_id"] = id_map[obj["category_id"]]
             objs.append(obj)
         record["annotations"] = objs
