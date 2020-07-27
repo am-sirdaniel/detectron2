@@ -10,7 +10,7 @@ import numpy as np
 import pycocotools.mask as mask_util
 import torch
 from fvcore.common.file_io import PathManager
-from PIL import Image
+from PIL import Image, ImageOps
 
 from detectron2.structures import (
     BitMasks,
@@ -26,21 +26,6 @@ from detectron2.structures import (
 from . import transforms as T
 from .catalog import MetadataCatalog
 
-__all__ = [
-    "SizeMismatchError",
-    "convert_image_to_rgb",
-    "check_image_size",
-    "transform_proposals",
-    "transform_instance_annotations",
-    "annotations_to_instances",
-    "annotations_to_instances_rotated",
-    "build_augmentation",
-    "build_transform_gen",
-    "create_keypoint_hflip_indices",
-    "filter_empty_instances",
-    "read_image",
-]
-
 
 class SizeMismatchError(ValueError):
     """
@@ -48,128 +33,44 @@ class SizeMismatchError(ValueError):
     """
 
 
-# https://en.wikipedia.org/wiki/YUV#SDTV_with_BT.601
-_M_RGB2YUV = [[0.299, 0.587, 0.114], [-0.14713, -0.28886, 0.436], [0.615, -0.51499, -0.10001]]
-_M_YUV2RGB = [[1.0, 0.0, 1.13983], [1.0, -0.39465, -0.58060], [1.0, 2.03211, 0.0]]
-
-# https://www.exiv2.org/tags.html
-_EXIF_ORIENT = 274  # exif 'Orientation' tag
-
-
-def convert_PIL_to_numpy(image, format):
-    """
-    Convert PIL image to numpy array of target format.
-    Args:
-        image (PIL.Image): a PIL image
-        format (str): the format of output image
-    Returns:
-        (np.ndarray): also see `read_image`
-    """
-    if format is not None:
-        # PIL only supports RGB, so convert to RGB and flip channels over below
-        conversion_format = format
-        if format in ["BGR", "YUV-BT.601"]:
-            conversion_format = "RGB"
-        image = image.convert(conversion_format)
-    image = np.asarray(image)
-    # PIL squeezes out the channel dimension for "L", so make it HWC
-    if format == "L":
-        image = np.expand_dims(image, -1)
-
-    # handle formats not supported by PIL
-    elif format == "BGR":
-        # flip channels if needed
-        image = image[:, :, ::-1]
-    elif format == "YUV-BT.601":
-        image = image / 255.0
-        image = np.dot(image, np.array(_M_RGB2YUV).T)
-
-    return image
-
-
-def convert_image_to_rgb(image, format):
-    """
-    Convert an image from given format to RGB.
-    Args:
-        image (np.ndarray or Tensor): an HWC image
-        format (str): the format of input image, also see `read_image`
-    Returns:
-        (np.ndarray): (H,W,3) RGB image in 0-255 range, can be either float or uint8
-    """
-    if isinstance(image, torch.Tensor):
-        image = image.cpu().numpy()
-    if format == "BGR":
-        image = image[:, :, [2, 1, 0]]
-    elif format == "YUV-BT.601":
-        image = np.dot(image, np.array(_M_YUV2RGB).T)
-        image = image * 255.0
-    else:
-        if format == "L":
-            image = image[:, :, 0]
-        image = image.astype(np.uint8)
-        image = np.asarray(Image.fromarray(image, mode=format).convert("RGB"))
-    return image
-
-
-def _apply_exif_orientation(image):
-    """
-    Applies the exif orientation correctly.
-    This code exists per the bug:
-      https://github.com/python-pillow/Pillow/issues/3973
-    with the function `ImageOps.exif_transpose`. The Pillow source raises errors with
-    various methods, especially `tobytes`
-    Function based on:
-      https://github.com/wkentaro/labelme/blob/v4.5.4/labelme/utils/image.py#L59
-      https://github.com/python-pillow/Pillow/blob/7.1.2/src/PIL/ImageOps.py#L527
-    Args:
-        image (PIL.Image): a PIL image
-    Returns:
-        (PIL.Image): the PIL image with exif orientation applied, if applicable
-    """
-    if not hasattr(image, "getexif"):
-        return image
-
-    exif = image.getexif()
-
-    if exif is None:
-        return image
-
-    orientation = exif.get(_EXIF_ORIENT)
-
-    method = {
-        2: Image.FLIP_LEFT_RIGHT,
-        3: Image.ROTATE_180,
-        4: Image.FLIP_TOP_BOTTOM,
-        5: Image.TRANSPOSE,
-        6: Image.ROTATE_270,
-        7: Image.TRANSVERSE,
-        8: Image.ROTATE_90,
-    }.get(orientation)
-
-    if method is not None:
-        return image.transpose(method)
-    return image
-
-
 def read_image(file_name, format=None):
     """
     Read an image into the given format.
     Will apply rotation and flipping if the image has such exif information.
+
     Args:
         file_name (str): image file path
-        format (str): one of the supported image modes in PIL, or "BGR" or "YUV-BT.601".
+        format (str): one of the supported image modes in PIL, or "BGR"
+
     Returns:
-        image (np.ndarray): an HWC image in the given format, which is 0-255, uint8 for
-            supported image modes in PIL or "BGR"; float (0-1 for Y) for YUV-BT.601.
+        image (np.ndarray): an HWC image in the given format.
     """
     with PathManager.open(file_name, "rb") as f:
-        image = Image.open(f)
-        print('check image from detection_utils.py', image)
+        try:
+            image = Image.open(f)
+        except: #lets skip unfound image s for now
+            return None
 
-        # work around this bug: https://github.com/python-pillow/Pillow/issues/3973
-        image = _apply_exif_orientation(image)
+        # capture and ignore this bug: https://github.com/python-pillow/Pillow/issues/3973
+        try:
+            image = ImageOps.exif_transpose(image)
+        except Exception:
+            pass
 
-        return convert_PIL_to_numpy(image, format)
+        if format is not None:
+            # PIL only supports RGB, so convert to RGB and flip channels over below
+            conversion_format = format
+            if format == "BGR":
+                conversion_format = "RGB"
+            image = image.convert(conversion_format)
+        image = np.asarray(image)
+        if format == "BGR":
+            # flip channels if needed
+            image = image[:, :, ::-1]
+        # PIL squeezes out the channel dimension for "L", so make it HWC
+        if format == "L":
+            image = np.expand_dims(image, -1)
+        return image
 
 
 def check_image_size(dataset_dict, image):
@@ -197,17 +98,18 @@ def check_image_size(dataset_dict, image):
         dataset_dict["height"] = image.shape[0]
 
 
-def transform_proposals(dataset_dict, image_shape, transforms, *, proposal_topk, min_box_size=0):
+def transform_proposals(dataset_dict, image_shape, transforms, min_box_side_len, proposal_topk):
     """
     Apply transformations to the proposals in dataset_dict, if any.
+
     Args:
         dataset_dict (dict): a dict read from the dataset, possibly
             contains fields "proposal_boxes", "proposal_objectness_logits", "proposal_bbox_mode"
         image_shape (tuple): height, width
         transforms (TransformList):
+        min_box_side_len (int): keep proposals with at least this size
         proposal_topk (int): only keep top-K scoring proposals
-        min_box_size (int): proposals with either side smaller than this
-            threshold are removed
+
     The input dict is modified in-place, with abovementioned keys removed. A new
     key "proposals" will be added. Its value is an `Instances`
     object which contains the transformed proposals in its field
@@ -228,7 +130,7 @@ def transform_proposals(dataset_dict, image_shape, transforms, *, proposal_topk,
         )
 
         boxes.clip(image_shape)
-        keep = boxes.nonempty(threshold=min_box_size)
+        keep = boxes.nonempty(threshold=min_box_side_len)
         boxes = boxes[keep]
         objectness_logits = objectness_logits[keep]
 
@@ -243,29 +145,28 @@ def transform_instance_annotations(
 ):
     """
     Apply transforms to box, segmentation and keypoints annotations of a single instance.
+
     It will use `transforms.apply_box` for the box, and
     `transforms.apply_coords` for segmentation polygons & keypoints.
     If you need anything more specially designed for each data structure,
     you'll need to implement your own version of this function or the transforms.
+
     Args:
         annotation (dict): dict of instance annotations for a single instance.
             It will be modified in-place.
-        transforms (TransformList or list[Transform]):
+        transforms (TransformList):
         image_size (tuple): the height, width of the transformed image
         keypoint_hflip_indices (ndarray[int]): see `create_keypoint_hflip_indices`.
+
     Returns:
         dict:
             the same input dict with fields "bbox", "segmentation", "keypoints"
             transformed according to `transforms`.
             The "bbox_mode" field will be set to XYXY_ABS.
     """
-    if isinstance(transforms, (tuple, list)):
-        transforms = T.TransformList(transforms)
-    # bbox is 1d (per-instance bounding box)
     bbox = BoxMode.convert(annotation["bbox"], annotation["bbox_mode"], BoxMode.XYXY_ABS)
-    # clip transformed bbox to image size
-    bbox = transforms.apply_box(np.array([bbox]))[0].clip(min=0)
-    annotation["bbox"] = np.minimum(bbox, list(image_size + image_size)[::-1])
+    # Note that bbox is 1d (per-instance bounding box)
+    annotation["bbox"] = transforms.apply_box([bbox])[0]
     annotation["bbox_mode"] = BoxMode.XYXY_ABS
 
     if "segmentation" in annotation:
@@ -302,25 +203,16 @@ def transform_instance_annotations(
 def transform_keypoint_annotations(keypoints, transforms, image_size, keypoint_hflip_indices=None):
     """
     Transform keypoint annotations of an image.
-    If a keypoint is transformed out of image boundary, it will be marked "unlabeled" (visibility=0)
+
     Args:
-        keypoints (list[float]): Nx3 float in Detectron2's Dataset format.
-            Each point is represented by (x, y, visibility).
+        keypoints (list[float]): Nx3 float in Detectron2 Dataset format.
         transforms (TransformList):
         image_size (tuple): the height, width of the transformed image
         keypoint_hflip_indices (ndarray[int]): see `create_keypoint_hflip_indices`.
-            When `transforms` includes horizontal flip, will use the index
-            mapping to flip keypoints.
     """
     # (N*3,) -> (N, 3)
     keypoints = np.asarray(keypoints, dtype="float64").reshape(-1, 3)
-    keypoints_xy = transforms.apply_coords(keypoints[:, :2])
-
-    # Set all out-of-boundary points to "unlabeled"
-    inside = (keypoints_xy >= np.array([0, 0])) & (keypoints_xy <= np.array(image_size[::-1]))
-    inside = inside.all(axis=1)
-    keypoints[:, :2] = keypoints_xy
-    keypoints[:, 2][~inside] = 0
+    keypoints[:, :2] = transforms.apply_coords(keypoints[:, :2])
 
     # This assumes that HorizFlipTransform is the only one that does flip
     do_hflip = sum(isinstance(t, T.HFlipTransform) for t in transforms.transforms) % 2 == 1
@@ -335,7 +227,9 @@ def transform_keypoint_annotations(keypoints, transforms, image_size, keypoint_h
         assert keypoint_hflip_indices is not None
         keypoints = keypoints[keypoint_hflip_indices, :]
 
-    # Maintain COCO convention that if visibility == 0 (unlabeled), then x, y = 0
+    # Maintain COCO convention that if visibility == 0, then x, y = 0
+    # TODO may need to reset visibility for cropped keypoints,
+    # but it does not matter for our existing algorithms
     keypoints[keypoints[:, 2] == 0] = 0
     return keypoints
 
@@ -344,10 +238,12 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     """
     Create an :class:`Instances` object used by the models,
     from instance annotations in the dataset dict.
+
     Args:
         annos (list[dict]): a list of instance annotations in one image, each
             element for one instance.
         image_size (tuple): height, width
+
     Returns:
         Instances:
             It will contain fields "gt_boxes", "gt_classes",
@@ -356,22 +252,16 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     """
     boxes = [BoxMode.convert(obj["bbox"], obj["bbox_mode"], BoxMode.XYXY_ABS) for obj in annos]
     target = Instances(image_size)
-    target.gt_boxes = Boxes(boxes)
+    boxes = target.gt_boxes = Boxes(boxes)
+    boxes.clip(image_size)
 
     classes = [obj["category_id"] for obj in annos]
     classes = torch.tensor(classes, dtype=torch.int64)
     target.gt_classes = classes
 
-    #print('detection utils annotations', annos[0])
-    #print('detection utils other fields: ', target.get_fields())
-    #kpts = [obj.get("pose_3d", []) for obj in annos]
-    #target.set('gt_pose3d', kpts)
-    #print('detection utils fields + 3d kps: ', target.get_fields())
-
     if len(annos) and "segmentation" in annos[0]:
         segms = [obj["segmentation"] for obj in annos]
         if mask_format == "polygon":
-            # TODO check type and provide better error
             masks = PolygonMasks(segms)
         else:
             assert mask_format == "bitmask", mask_format
@@ -406,16 +296,6 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
         kpts = [obj.get("keypoints", []) for obj in annos]
         target.gt_keypoints = Keypoints(kpts)
 
-    if len(annos) and "pose_3d" in annos[0]:
-        #print('annotations', annos[0])
-        kpts = [obj.get("pose_3d", []) for obj in annos]
-        #target.gt_pose3d = Keypoints(kpts)
-        target.set('gt_pose3d',torch.Tensor(kpts))
-        # target.gt_pose3d = kpts
-        #print('before fields: ', target.get_fields())
-        #print('new target.gt_pose3d:', target.gt_pose3d)
-
-
     return target
 
 
@@ -424,10 +304,12 @@ def annotations_to_instances_rotated(annos, image_size):
     Create an :class:`Instances` object used by the models,
     from instance annotations in the dataset dict.
     Compared to `annotations_to_instances`, this function is for rotated boxes only
+
     Args:
         annos (list[dict]): a list of instance annotations in one image, each
             element for one instance.
         image_size (tuple): height, width
+
     Returns:
         Instances:
             Containing fields "gt_boxes", "gt_classes",
@@ -449,11 +331,13 @@ def annotations_to_instances_rotated(annos, image_size):
 def filter_empty_instances(instances, by_box=True, by_mask=True, box_threshold=1e-5):
     """
     Filter out empty instances in an `Instances` object.
+
     Args:
         instances (Instances):
         by_box (bool): whether to filter out instances with empty boxes
         by_mask (bool): whether to filter out instances with empty masks
         box_threshold (float): minimum width and height to be considered non-empty
+
     Returns:
         Instances: the filtered instances.
     """
@@ -500,6 +384,7 @@ def gen_crop_transform_with_instance(crop_size, image_size, instance):
     """
     Generate a CropTransform so that the cropping region contains
     the center of the given instance.
+
     Args:
         crop_size (tuple): h, w in pixels
         image_size (tuple): h, w
@@ -528,9 +413,11 @@ def gen_crop_transform_with_instance(crop_size, image_size, instance):
 def check_metadata_consistency(key, dataset_names):
     """
     Check that the datasets have consistent metadata.
+
     Args:
         key (str): a metadata key
         dataset_names (list[str]): a list of dataset names
+
     Raises:
         AttributeError: if the key does not exist in the metadata
         ValueError: if the given datasets do not have the same metadata values defined by key
@@ -552,12 +439,13 @@ def check_metadata_consistency(key, dataset_names):
             raise ValueError("Datasets have different metadata '{}'!".format(key))
 
 
-def build_augmentation(cfg, is_train):
+def build_transform_gen(cfg, is_train):
     """
-    Create a list of default :class:`Augmentation` from config.
+    Create a list of :class:`TransformGen` from config.
     Now it includes resizing and flipping.
+
     Returns:
-        list[Augmentation]
+        list[TransformGen]
     """
     if is_train:
         min_size = cfg.INPUT.MIN_SIZE_TRAIN
@@ -567,13 +455,15 @@ def build_augmentation(cfg, is_train):
         min_size = cfg.INPUT.MIN_SIZE_TEST
         max_size = cfg.INPUT.MAX_SIZE_TEST
         sample_style = "choice"
-    augmentation = [T.ResizeShortestEdge(min_size, max_size, sample_style)]
+    if sample_style == "range":
+        assert len(min_size) == 2, "more than 2 ({}) min_size(s) are provided for ranges".format(
+            len(min_size)
+        )
+
+    logger = logging.getLogger(__name__)
+    tfm_gens = []
+    tfm_gens.append(T.ResizeShortestEdge(min_size, max_size, sample_style))
     if is_train:
-        augmentation.append(T.RandomFlip())
-    return augmentation
-
-
-build_transform_gen = build_augmentation
-"""
-Alias for backward-compatibility.
-"""
+        tfm_gens.append(T.RandomFlip())
+        logger.info("TransformGens used in training: " + str(tfm_gens))
+    return tfm_gens
