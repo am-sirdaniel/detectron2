@@ -234,13 +234,13 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
     #2D loss
-    kps = torch.cat(kps)
-    s1, s2 = kps.shape[0], kps.shape[1] #shape
+    #kps = torch.cat(kps)
+    #s1, s2 = kps.shape[0], kps.shape[1] #shape
     #exclude invlaid
-    kps = kps.view(s1*s2, -1)[valid]
+    #kps = kps.view(s1*s2, -1)[valid]
 
-    print('pred_integral, kps', pred_integral[:5], kps[:5])
-    pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
+    #print('pred_integral, kps', pred_integral[:5], kps[:5])
+    #pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     #pose2d_loss = torch.sqrt(torch.mean((pred_integral - kps)**2))
     
 
@@ -322,45 +322,45 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #     [109.8567,  45.1855],
     #     [ 92.0391,  33.6960]]).cuda()
 
-    #With Batch mean and std, you wont have fixed values to de-normarlize
+    # With Batch mean and std, you wont have fixed values to de-normarlize
 
     #kps = (kps - kp_mean)/kp_std
 
     #Min-max Normalization using Full Image
-    # xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
 
-    # partx = kps[:,:,0:1]
-    # partx = (partx - xmin)/(xmax - xmin)
+    partx = kps[:,:,0:1]
+    partx = (partx - xmin)/(xmax - xmin)
 
-    # party = kps[:,:,1:2]
-    # party = (party - ymin)/(ymax - ymin)
+    party = kps[:,:,1:2]
+    party = (party - ymin)/(ymax - ymin)
 
-    # kps = torch.stack((partx,  party), dim = -2)
-    # #print('1st kps', kps.shape)
-    # kps = kps.squeeze(-1)
+    kps = torch.stack((partx,  party), dim = -2)
+    #print('1st kps', kps.shape)
+    kps = kps.squeeze(-1)
 
 
     #print('raw kps shape', kps.shape)
-    #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
-    #s1, s2 = kps.shape[0], kps.shape[1] #shape
-    #kps = kps.view(s1*s2, -1)[valid]
+    keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
+    s1, s2 = kps.shape[0], kps.shape[1] #shape
+    kps = kps.view(s1*s2, -1)[valid]
     #print('kps removed shape', kps.shape)
 
 
-    # print('pred: ', pred_integral[0:3], pred_integral[-3:])
-    # print('kps: ', kps[0:3], kps[-3:])
-    # print()
-    # print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    # pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
-    # #print()
-    # print('raw loss', pose2d_loss)
+    print('pred: ', pred_integral[-3:])
+    print('kps: ', kps[-3:])
+    print()
+    #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
+    pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
+    #print()
+    #print('raw loss', pose2d_loss)
 
-    # #################################################
+    #################################################
     # comb_loss = pose2d_loss *0.5 + pose3d_loss *0.5
 
-    # keypoint_loss = F.cross_entropy(
-    #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
-    # )
+    # # keypoint_loss = F.cross_entropy(
+    # #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
+    # # )
 
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
     if normalizer is None:
