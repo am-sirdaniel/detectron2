@@ -116,6 +116,7 @@ def build_model(cfg):
     meta_arch = cfg.MODEL.META_ARCHITECTURE
     maskrcc_model = META_ARCH_REGISTRY.get(meta_arch)(cfg)
     print('maskrcc_model type', type(maskrcc_model))
+    print('isinstance:', isinstance(maskrcc_model, nn.Module))
     
     model = CombinedWithLinear(maskrcc_model)
     model.to(torch.device(cfg.MODEL.DEVICE))
