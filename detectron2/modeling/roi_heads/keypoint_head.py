@@ -79,14 +79,24 @@ def integral_2d_innovate(heatmap, rois):
     # computing integral in relative global coordinates directly
 
     print('rois in integral function ', rois)
-    start_x = rois[:, 0]
-    start_y = rois[:, 1]
+    # start_x = rois[:, 0]
+    # start_y = rois[:, 1]
 
-    scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
-    scale_y = 1 / (rois[:, 3] - rois[:, 1])
+    # scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
+    # scale_y = 1 / (rois[:, 3] - rois[:, 1])
 
-    scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
-    scale_inv_y = (rois[:, 3] - rois[:, 1])
+    # scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
+    # scale_inv_y = (rois[:, 3] - rois[:, 1])
+
+
+    start_x = 0.0
+    start_y = 8.637619
+
+    scale_x = 1 / (1236.8367 - 0.0)#bottom part of min-max normalization with division
+    scale_y = 1 / (619.60706 - 8.637619 )
+
+    scale_inv_x = (1236.8367 - 0.0) #bottom part of min-max normalization without division yet
+    scale_inv_y = (619.60706 - 8.637619 )
 
     # # all locations p in the domain, 
     # x_list = torch.linspace(0,1, h).cuda()
@@ -353,12 +363,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
     if normalizer is None:
         normalizer = valid.numel()
-    #pose2d_loss /= normalizer
+    pose2d_loss /= normalizer
 
-    print('pose2d_loss (global relative coords): ', pose2d_loss)
+    print('pose2d_LOSS (global relative coords): ', pose2d_loss)
     #print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
     print()
-    return 1/pose2d_loss
+    return pose2d_loss
 
 
 def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
