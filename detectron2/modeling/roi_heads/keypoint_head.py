@@ -552,7 +552,7 @@ class BaseKeypointRCNNHead(nn.Module):
         self.loss_weight = loss_weight
         assert loss_normalizer == "visible" or isinstance(loss_normalizer, float), loss_normalizer
         self.loss_normalizer = loss_normalizer
-		self.linermodel = LinearModel()
+	self.linermodel = LinearModel()
 
     @classmethod
     def from_config(cls, cfg, input_shape):
