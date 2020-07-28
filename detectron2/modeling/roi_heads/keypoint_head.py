@@ -354,7 +354,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     print('kps: ', kps[-3:])
     print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    pose2d_loss = torch.sqrt(torch.nn.functional.mse_loss(pred_integral, kps))
+    pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     #print()
     #print('raw loss', pose2d_loss)
 
