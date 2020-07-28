@@ -450,8 +450,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
 def weight_init(m):
     if isinstance(m, nn.Linear):
-    	nn.init.constant(m.bias, 0)
-        nn.init.kaiming_normal(m.weight)
+	nn.init.constant(m.bias, 0)
+	nn.init.kaiming_normal(m.weight)
 
 
 class Linear(nn.Module):
