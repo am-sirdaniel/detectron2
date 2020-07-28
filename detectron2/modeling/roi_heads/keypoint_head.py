@@ -246,12 +246,28 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
     print('GT pose3d', pose3d_gt[0])
 
-    print('pose3d_gt shape', pose3d_gt.shape)
+    print('pose3d_gt shape', pose3d_gt.shape) #N,18
+
+    #Normalize 3d GT by mean-std
+    mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
+         -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
+         1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]),
+ 	torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+         143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
+         161.9945, 159.9102, 146.8468, 146.0199]))
+
+    pose3d_gt = (pose3d_gt - mean_3d)/std_3d
+    print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
     #remove invalids
     pred_3d = pred_3d.view(-1, 3)[valid]
     pose3d_gt = pose3d_gt.view(-1, 3)[valid]
     print('new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
+
+
+    
+
+
 
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
     print('pose3d_LOSS: ', pose3d_loss)
