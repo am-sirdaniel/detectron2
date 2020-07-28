@@ -238,7 +238,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
-    pred_integral = pred_integral.reshape(N, -1)
+    pred_integral = pred_integral.reshape(-1, K*2)
     pred_3d = linermodel(pred_integral)
     pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
 
@@ -654,10 +654,9 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
             if "bias" in name:
                 nn.init.constant_(param, 0)
             elif "weight" in name:
-                pass
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
 
     @classmethod
     def from_config(cls, cfg, input_shape):
