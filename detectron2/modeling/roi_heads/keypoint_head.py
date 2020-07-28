@@ -54,23 +54,26 @@ def integral_2d_innovate(heatmap, rois):
     #print('origin logits bf heatmap', heatmap.shape)
 
     #implementing softmax (this was for a batch)
-    # max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
-    # heatmap = heatmap - max_
+    max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+    print('max shape', max_.shape)
+    heatmap = heatmap - max_
 
-    # exp_heatmap = torch.exp(heatmap)
-    # h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
+    exp_heatmap = torch.exp(heatmap)
+    h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
 
     #James softmax for per e.g ankle heatmap
-    tempheat = torch.reshape(heatmap, (heatmap.shape[0],heatmap.shape[1], -1))
+    #tempheat = torch.reshape(heatmap, (heatmap.shape[0],heatmap.shape[1], -1))
     #print(tempheat.shape)
-    tempheat = torch.reshape(tempheat, (heatmap.shape[0]*heatmap.shape[1], -1))
+    #tempheat = torch.reshape(tempheat, (heatmap.shape[0]*heatmap.shape[1], -1))
     #print(tempheat.shape)
-    h_norm = nn.functional.softmax(tempheat.float(),1)
+    #h_norm = nn.functional.softmax(tempheat.float(),1)
 
     #reshape back
-    h_norm = torch.reshape(h_norm, (heatmap.shape[0],heatmap.shape[1], -1))
-    h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
+    #h_norm = torch.reshape(h_norm, (heatmap.shape[0],heatmap.shape[1], -1))
+    #h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
     
+
+
     #Any NAN in hnorm
     test = h_norm.cpu().detach().numpy()
     print('HNORM contains nan ?:', ['YES' if np.sum(np.isnan(test)) else 'NO'])
@@ -78,7 +81,7 @@ def integral_2d_innovate(heatmap, rois):
     #DISCRETE FORM of the Integral Equation
     # computing integral in relative global coordinates directly
 
-    print('rois in integral function ', rois)
+    #print('rois in integral function ', rois)
     # start_x = rois[:, 0]
     # start_y = rois[:, 1]
 
@@ -174,7 +177,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     keypoint_side_len = pred_keypoint_logits.shape[2]
 
     # flatten all bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    #print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
+    print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
@@ -360,7 +363,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     # # keypoint_loss = F.cross_entropy(
     # #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
-    # # )
+    # # )m
 
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
     if normalizer is None:
