@@ -234,7 +234,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
     #2D loss
-    #kps = torch.cat(kps)
+    kps = torch.cat(kps)
     #s1, s2 = kps.shape[0], kps.shape[1] #shape
     #exclude invlaid
     #kps = kps.view(s1*s2, -1)[valid]
