@@ -103,7 +103,7 @@ class CombinedWithLinear(nn.Module):
 		self.linearmodel = LinearModel()
 
 	def foward(*input, **kwarg):
-		print('################################')
+		print('CombinedWithLinear - ################################')
 		x = maskrcc_model(*input, **kwarg)
 		print('================================')
 		print('type:', type(x))
@@ -117,7 +117,10 @@ def build_model(cfg):
     Build the whole model architecture, defined by ``cfg.MODEL.META_ARCHITECTURE``.
     Note that it does not load any weights from ``cfg``.
     """
+    print('meta_arch ======================')
     meta_arch = cfg.MODEL.META_ARCHITECTURE
+
+    print('maskrcc_model ======================')
     maskrcc_model = META_ARCH_REGISTRY.get(meta_arch)(cfg)
     print('maskrcc_model type', type(maskrcc_model))
     print('isinstance:', isinstance(maskrcc_model, nn.Module))
