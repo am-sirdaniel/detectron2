@@ -103,6 +103,7 @@ class CombinedWithLinear(nn.Module):
 		self.linearmodel = LinearModel()
 
 	def foward(*input, **kwarg):
+		print('################################')
 		x = maskrcc_model(*input, **kwarg)
 		print('================================')
 		print('type:', type(x))
