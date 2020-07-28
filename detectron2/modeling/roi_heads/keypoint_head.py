@@ -238,6 +238,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
+    pred_integral = pred_integral.reshape(N, -1)
     pred_3d = linermodel(pred_integral)
     pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
 
@@ -450,9 +451,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
 def weight_init(m):
     if isinstance(m, nn.Linear):
-        pass
-        #nn.init.constant(m.bias, 0)
-        #nn.init.kaiming_normal(m.weight)
+    	nn.init.constant(m.bias, 0)
+        nn.init.kaiming_normal(m.weight)
 
 
 class Linear(nn.Module):
@@ -555,7 +555,7 @@ class BaseKeypointRCNNHead(nn.Module):
         assert loss_normalizer == "visible" or isinstance(loss_normalizer, float), loss_normalizer
         self.loss_normalizer = loss_normalizer
         self.linermodel = LinearModel()
-        #self.linermodel.apply(weight_init)
+        self.linermodel.apply(weight_init)
 
     @classmethod
     def from_config(cls, cfg, input_shape):
