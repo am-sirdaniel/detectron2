@@ -82,14 +82,14 @@ def integral_2d_innovate(heatmap, rois):
     # computing integral in relative global coordinates directly
 
     #print('rois in integral function ', rois)
-    start_x = rois[:, 0]
-    start_y = rois[:, 1]
+    # start_x = rois[:, 0]
+    # start_y = rois[:, 1]
 
-    scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
-    scale_y = 1 / (rois[:, 3] - rois[:, 1])
+    # scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
+    # scale_y = 1 / (rois[:, 3] - rois[:, 1])
 
-    scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
-    scale_inv_y = (rois[:, 3] - rois[:, 1])
+    # scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
+    # scale_inv_y = (rois[:, 3] - rois[:, 1])
 
 
     # start_x = 0.0
@@ -116,10 +116,10 @@ def integral_2d_innovate(heatmap, rois):
     j_ = torch.sum(j*h_norm, dim=(-1,-2))
 
     # transforming back to global relative coords
-    print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
+    #print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
     print('i_ (before) as 0-1 coordinates', i_[0])
-    i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
-    j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
+    #i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
+    #j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
     #i_ = i_ * scale_inv_x + start_x
     #j_ = j_ * scale_inv_y + start_y
     #print('i_ (after) as global coordinates', i_[0])
@@ -330,17 +330,17 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #kps = (kps - kp_mean)/kp_std
 
     #Min-max Normalization using Full Image
-    # xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
 
-    # partx = kps[:,:,0:1]
-    # partx = (partx - xmin)/(xmax - xmin)
+    partx = kps[:,:,0:1]
+    partx = (partx - xmin)/(xmax - xmin)
 
-    # party = kps[:,:,1:2]
-    # party = (party - ymin)/(ymax - ymin)
+    party = kps[:,:,1:2]
+    party = (party - ymin)/(ymax - ymin)
 
-    # kps = torch.stack((partx,  party), dim = -2)
-    # #print('1st kps', kps.shape)
-    # kps = kps.squeeze(-1)
+    kps = torch.stack((partx,  party), dim = -2)
+    #print('1st kps', kps.shape)
+    kps = kps.squeeze(-1)
 
 
     #print('raw kps shape', kps.shape)
