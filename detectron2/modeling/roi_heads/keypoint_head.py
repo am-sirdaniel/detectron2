@@ -452,8 +452,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
 def weight_init(m):
     if isinstance(m, nn.Linear):
-        nn.init.constant(m.bias, 0)
-        nn.init.kaiming_normal(m.weight)
+        #nn.init.constant(m.bias, 0)
+        #nn.init.kaiming_normal(m.weight)
 
 
 class Linear(nn.Module):
@@ -556,7 +556,7 @@ class BaseKeypointRCNNHead(nn.Module):
         assert loss_normalizer == "visible" or isinstance(loss_normalizer, float), loss_normalizer
         self.loss_normalizer = loss_normalizer
         self.linermodel = LinearModel()
-        self.linermodel.apply(weight_init)
+        #self.linermodel.apply(weight_init)
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -657,7 +657,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
             elif "weight" in name:
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
 
     @classmethod
     def from_config(cls, cfg, input_shape):
