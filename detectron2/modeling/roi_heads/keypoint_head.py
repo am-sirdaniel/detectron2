@@ -150,7 +150,7 @@ def effective_2d_3d(pose2D_normalized):
 	return pred_pose3d
 
 
-def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
+def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     """
     Arguments:
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
@@ -175,6 +175,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     N, K, H, W = pred_keypoint_logits.shape
     keypoint_side_len = pred_keypoint_logits.shape[2]
+
+
 
     # flatten all bboxes from all images together (list[Boxes] -> Rx4 tensor)
     print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
@@ -235,6 +237,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
+
+    pred_3d = linermodel(pred_integral)
+    pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
+
+    pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
+    print('pose3d_LOSS: ', pose3d_loss)
 
     #2D loss
     kps = torch.cat(kps)
@@ -355,25 +363,27 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
+    print('pose2d_LOSS (global relative coords): ', pose2d_loss)
     #print()
     #print('raw loss', pose2d_loss)
 
     #################################################
-    # comb_loss = pose2d_loss *0.5 + pose3d_loss *0.5
+    comb_loss = pose2d_loss *0.5 + pose3d_loss *0.5
+    print('comb_loss: ', comb_loss)
 
     # # keypoint_loss = F.cross_entropy(
     # #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
     # # )m
 
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
-    if normalizer is None:
-        normalizer = valid.numel()
-    pose2d_loss /= normalizer
+    # if normalizer is None:
+    #     normalizer = valid.numel()
+    # pose2d_loss /= normalizer
 
-    print('pose2d_LOSS (global relative coords): ', pose2d_loss)
+    
     #print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
     print()
-    return pose2d_loss
+    return comb_loss
 
 
 def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
@@ -436,6 +446,89 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         
     #instances_per_image.pred_keypoints = keypoint_results
 
+########################################################## MY CODE
+
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.kaiming_normal(m.weight)
+
+
+class Linear(nn.Module):
+    def __init__(self, linear_size, p_dropout=0.5):
+        super(Linear, self).__init__()
+        self.l_size = linear_size
+
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(p_dropout)
+
+        self.w1 = nn.Linear(self.l_size, self.l_size)
+        self.batch_norm1 = nn.BatchNorm1d(self.l_size)
+
+        self.w2 = nn.Linear(self.l_size, self.l_size)
+        self.batch_norm2 = nn.BatchNorm1d(self.l_size)
+
+    def forward(self, x):
+        y = self.w1(x)
+        y = self.batch_norm1(y)
+        y = self.relu(y)
+        y = self.dropout(y)
+
+        y = self.w2(y)
+        y = self.batch_norm2(y)
+        y = self.relu(y)
+        y = self.dropout(y)
+
+        out = x + y
+
+        return out
+
+
+class LinearModel(nn.Module):
+    def __init__(self,
+                 linear_size=1024,
+                 num_stage=2,
+                 p_dropout=0.5):
+        super(LinearModel, self).__init__()
+
+        self.linear_size = linear_size
+        self.p_dropout = p_dropout
+        self.num_stage = num_stage
+
+        # 2d joints
+        self.input_size =  6 * 2
+        # 3d joints
+        self.output_size = 6 * 3
+
+        # process input to linear size
+        self.w1 = nn.Linear(self.input_size, self.linear_size)
+        self.batch_norm1 = nn.BatchNorm1d(self.linear_size)
+
+        self.linear_stages = []
+        for l in range(num_stage):
+            self.linear_stages.append(Linear(self.linear_size, self.p_dropout))
+        self.linear_stages = nn.ModuleList(self.linear_stages)
+
+        # post processing
+        self.w2 = nn.Linear(self.linear_size, self.output_size)
+
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(self.p_dropout)
+
+    def forward(self, x):
+        # pre-processing
+        y = self.w1(x)
+        y = self.batch_norm1(y)
+        y = self.relu(y)
+        y = self.dropout(y)
+
+        # linear layers
+        for i in range(self.num_stage):
+            y = self.linear_stages[i](y)
+
+        y = self.w2(y)
+
+        return y
+##################################### END of MYCODE
 
 class BaseKeypointRCNNHead(nn.Module):
     """
@@ -459,6 +552,7 @@ class BaseKeypointRCNNHead(nn.Module):
         self.loss_weight = loss_weight
         assert loss_normalizer == "visible" or isinstance(loss_normalizer, float), loss_normalizer
         self.loss_normalizer = loss_normalizer
+	self.linermodel = LinearModel()
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -504,7 +598,7 @@ class BaseKeypointRCNNHead(nn.Module):
                 None if self.loss_normalizer == "visible" else num_images * self.loss_normalizer
             )
             return {
-                "loss_keypoint": keypoint_rcnn_loss(x, instances, normalizer=normalizer)
+                "loss_keypoint": keypoint_rcnn_loss(x, instances, normalizer=normalizer, linermodel=self.linermodel)
                 * self.loss_weight
             } #self.model2, self.optimizer2
         else:
