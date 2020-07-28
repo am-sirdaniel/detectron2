@@ -230,7 +230,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     print('pred_integral, kps', pred_integral[:5], kps[:5])
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps)
     #pose2d_loss = torch.sqrt(torch.mean((pred_integral - kps)**2))
-    print('pose2d_loss (global relative coords): ', pose2d_loss)
+    
 
     # #3D loss
     # p3d = torch.cat(p3d)
@@ -353,11 +353,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
     if normalizer is None:
         normalizer = valid.numel()
-    pose2d_loss /= normalizer
+    #pose2d_loss /= normalizer
 
+    print('pose2d_loss (global relative coords): ', pose2d_loss)
     #print('normalized loss: ', keypoint_loss, 'normalizer amount: ', normalizer)
     print()
-    return pose2d_loss
+    return 1/pose2d_loss
 
 
 def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
