@@ -197,21 +197,35 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
+    print('pred_keypoint_logits after integral sample', pred_integral['pose_2d'][0][0])
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
     #2D loss
     kps = torch.cat(kps)
-    
+    kps = kps.view(N,K,-1)
 
-    #print('raw kps shape', kps.shape)
+    #Normalize 2d pose GT
+    xmax, xmin, ymax, ymin = 1280.0, 0.0, 720.0, 0.0
+
+    partx = kps[:,:,0:1]
+    partx = (partx - xmin)/(xmax - xmin)
+
+    party = kps[:,:,1:2]
+    party = (party - ymin)/(ymax - ymin)
+
+    kps = torch.stack((partx,  party), dim = -2)
+    kps = kps.squeeze(-1) #(N,K,2)
+    print('kps after normalization sample', kps[0][0])
+
+
     #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
     s1, s2 = kps.shape[0], kps.shape[1] #shape
     kps = kps.view(s1*s2, -1)[valid]
     #print('kps removed shape', kps.shape)
 
 
-    print('pred: ', pred_integral[-3:])
-    print('kps: ', kps[-3:])
+    print('pred bf mse: ', pred_integral[-3:])
+    print('kps bf mse: ', kps[-3:])
     print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral, kps, reduction = 'sum')
