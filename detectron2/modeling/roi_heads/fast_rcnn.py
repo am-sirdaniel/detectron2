@@ -228,7 +228,7 @@ class FastRCNNOutputs(object):
                 reduction="sum",
             )
         else:
-            print('self.pred_class_logits',self.pred_class_logits[-3:)
+            print('self.pred_class_logits',self.pred_class_logits[-3:])
             self._log_accuracy()
             return F.cross_entropy(self.pred_class_logits, self.gt_classes, reduction="mean")
 
