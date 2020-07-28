@@ -247,6 +247,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('GT pose3d', pose3d_gt[0])
 
     print('pose3d_gt shape', pose3d_gt.shape)
+
+    #remove invalids
+    pred_3d = pred_3d.view(-1, 3)[valid]
+    pose3d_gt = pose3d_gt.view(-1, 3)[valid]
+    print('new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
+
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
     print('pose3d_LOSS: ', pose3d_loss)
 
@@ -360,6 +366,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #print('raw kps shape', kps.shape)
     #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
     s1, s2 = kps.shape[0], kps.shape[1] #shape
+    print('kps shape before removing invlaid', kps.shape)
     kps = kps.view(s1*s2, -1)[valid]
     #print('kps removed shape', kps.shape)
 
