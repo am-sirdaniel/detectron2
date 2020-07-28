@@ -238,9 +238,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
     pred_integral = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
-    pred_integral = pred_integral.reshape(-1, K*2)
+    pred_integral = pred_integral['pose_2d'].reshape(N, -1)
     print('input to linear pred_integral', pred_integral.shape)
     pred_3d = linermodel(pred_integral)
+    print('output from linear pred_integral', pred_3d.shape)
     pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
 
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
