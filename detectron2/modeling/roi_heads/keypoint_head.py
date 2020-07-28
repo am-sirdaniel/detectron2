@@ -113,16 +113,16 @@ def integral_2d_innovate(heatmap, rois):
     j_ = torch.sum(j*h_norm, dim=(-1,-2))
 
     # transforming back to global relative coords
-    print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
+    #print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
     print('i_ (before) as 0-1 coordinates', i_[0])
     # i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
     # j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
-    i_ = i_ * scale_inv_x + start_x
-    j_ = j_ * scale_inv_y + start_y
-    print('i_ (after) as global coordinates', i_[0])
+    #i_ = i_ * scale_inv_x + start_x
+    #j_ = j_ * scale_inv_y + start_y
+    #print('i_ (after) as global coordinates', i_[0])
 
     #
-    print('scale x, scale_inv_x : ', scale_x, scale_inv_x)
+    #print('scale x, scale_inv_x : ', scale_x, scale_inv_x)
 
     #Modified arrangement
     pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
