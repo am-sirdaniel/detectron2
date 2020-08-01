@@ -103,7 +103,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     if normalizer is None:
         normalizer = valid.numel()
     keypoint_loss /= normalizer
-
+    
+    print('keypoint_loss',keypoint_loss)
+    print('normalizer',normalizer)
     return keypoint_loss
 
 
