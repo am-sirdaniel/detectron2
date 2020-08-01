@@ -66,7 +66,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         )
 
         print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0][0])
-
+        print('can we extract ROI start x and start y ?')
         heatmaps.append(heatmaps_per_image.view(-1))
         valid.append(valid_per_image.view(-1))
 
@@ -101,6 +101,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         normalizer = valid.numel()
     keypoint_loss /= normalizer
 
+    print('normalizer', normalizer)
+    print('keypoint_loss', keypoint_loss)
     return keypoint_loss
 
 
