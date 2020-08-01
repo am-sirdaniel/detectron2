@@ -90,8 +90,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     N, K, H, W = pred_keypoint_logits.shape
     pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
-    print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][0])
-    print('keypoint_targets[valid]', keypoint_targets[valid][0])
+    print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][-2:])
+    print('keypoint_targets[valid]', keypoint_targets[valid][-2:])
 
     print('min and max of GT heatmaps', torch.min(keypoint_targets[valid]), torch.max(keypoint_targets[valid]))
     print('min and max of pred heatmaps', torch.min(pred_keypoint_logits[valid]), torch.max(pred_keypoint_logits[valid]))
