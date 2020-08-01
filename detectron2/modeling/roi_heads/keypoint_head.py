@@ -59,19 +59,20 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        print('GT keypoints', keypoints.tensor[0][0])
+        print('GT keypoints', keypoints.tensor.shape, keypoints.tensor[0][0])
 
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
         )
 
-        print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0][0])
+        print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0])
         print('can we extract ROI start x and start y ?')
         heatmaps.append(heatmaps_per_image.view(-1))
         valid.append(valid_per_image.view(-1))
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0)
+        print('shape after stacking:', keypoint_targets.shape)
         valid = cat(valid, dim=0).to(dtype=torch.uint8)
         valid = torch.nonzero(valid).squeeze(1)
 
