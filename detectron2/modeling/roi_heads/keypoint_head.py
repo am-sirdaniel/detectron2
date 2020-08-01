@@ -59,16 +59,13 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        try:
-            print('GT keypoints', keypoints.tensor[0][0])
-        except:
-            print('printing GT keypoints had ERROR')
+        print('GT keypoints', keypoints[0][0])
 
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
         )
 
-        print('keypoint 2 GT heatmap values', type(heatmaps_per_image), heatmaps_per_image[0])
+        print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0][0])
 
         heatmaps.append(heatmaps_per_image.view(-1))
         valid.append(valid_per_image.view(-1))
@@ -90,8 +87,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     N, K, H, W = pred_keypoint_logits.shape
     pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
-    print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][-2:])
-    print('keypoint_targets[valid]', keypoint_targets[valid][-2:])
+    print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid][0])
+    print('keypoint_targets[valid]', keypoint_targets[valid][0])
 
     print('min and max of GT heatmaps', torch.min(keypoint_targets[valid]), torch.max(keypoint_targets[valid]))
     print('min and max of pred heatmaps', torch.min(pred_keypoint_logits[valid]), torch.max(pred_keypoint_logits[valid]))
@@ -103,9 +100,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     if normalizer is None:
         normalizer = valid.numel()
     keypoint_loss /= normalizer
-    
-    print('keypoint_loss',keypoint_loss)
-    print('normalizer',normalizer)
+
     return keypoint_loss
 
 
