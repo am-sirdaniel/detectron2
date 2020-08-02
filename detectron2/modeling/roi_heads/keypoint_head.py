@@ -224,7 +224,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         valid = cat(valid, dim=0).to(dtype=torch.uint8) #single vector
         valid = torch.nonzero(valid).squeeze(1)
 
-    kps = torch.cat(kps)
+    try:
+    	kps = torch.cat(kps)
+    except:
+    	print('kps', kps)
+    	kps = torch.cat(kps)
     # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it separately
     if len(heatmaps) == 0 or valid.numel() == 0:
