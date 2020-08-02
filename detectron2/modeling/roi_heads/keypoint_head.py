@@ -19,7 +19,7 @@ from detectron2.utils.events import get_event_storage
 from detectron2.utils.registry import Registry
 
 _TOTAL_SKIPPED = 0
-
+_TOTAL_SKIPPED_KPS = 0
 
 print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
 
@@ -229,11 +229,16 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         valid = cat(valid, dim=0).to(dtype=torch.uint8) #single vector
         valid = torch.nonzero(valid).squeeze(1)
 
-    try:
-    	kps = torch.cat(kps)
-    except:
-    	print('kps', kps)
-    	kps = torch.cat(kps)
+    # try:
+    # 	kps = torch.cat(kps)
+    # except:
+    # 	#empty tensors, so handle it separately
+    # 	print('Empty kps', kps)
+    # 	global _TOTAL_SKIPPED_KPS
+    #     _TOTAL_SKIPPED_KPS += 1
+    # 	return pred_keypoint_logits.sum() * 0
+
+
     # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it separately
     if len(heatmaps) == 0 or valid.numel() == 0:
@@ -244,7 +249,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         return pred_keypoint_logits.sum() * 0
 
     
-
+    kps = torch.cat(kps)
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
