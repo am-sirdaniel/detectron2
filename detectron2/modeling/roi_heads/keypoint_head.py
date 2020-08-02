@@ -199,11 +199,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         keypoints = instances_per_image.gt_keypoints
         #print('other fields:', instances_per_image.get_fields())
         #print('can we get image dim programmatically? :', instances_per_image.ke
-        pose3d_pts = instances_per_image.gt_pose3d.cuda()
-        #print('pose3d_pts shape: ', pose3d_pts.shape)
-        #reshape
-        pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
-
+        #############################################
+	#pose3d_pts = instances_per_image.gt_pose3d.cuda()
+        #pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
+        ############################################################
         #e.g (8,6,3)
         #print('Daniel test keypoints', keypoints.tensor.shape)
         #GT keypoints -> GT heatmaps  
@@ -217,7 +216,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
         #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
-        p3d.append(pose3d_pts)
+        ###################################
+	#p3d.append(pose3d_pts)
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
