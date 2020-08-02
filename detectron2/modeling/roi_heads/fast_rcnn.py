@@ -222,12 +222,12 @@ class FastRCNNOutputs(object):
         """
         if self._no_instances:
             # TODO 0.0 * pred.sum() is enough since PT1.6
-            return 0.0 * self.pred_class_logits.sum()
-#             return 0.0 * F.cross_entropy(
-#                 self.pred_class_logits,
-#                 torch.zeros(0, dtype=torch.long, device=self.pred_class_logits.device),
-#                 reduction="sum",
-#             )
+            #return 0.0 * self.pred_class_logits.sum()
+            return 0.0 * F.cross_entropy(
+                self.pred_class_logits,
+                torch.zeros(0, dtype=torch.long, device=self.pred_class_logits.device),
+                reduction="sum",
+            )
         else:
             #print('self.pred_class_logits',self.pred_class_logits[-3:])
             self._log_accuracy()
