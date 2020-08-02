@@ -197,6 +197,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
+        if len(keypoints) ==0:
+        	print('EMPTY KEYPOINTS, WHY?') 
+        	continue
+
+
         #print('other fields:', instances_per_image.get_fields())
         #print('can we get image dim programmatically? :', instances_per_image.ke
         #############################################
