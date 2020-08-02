@@ -124,8 +124,8 @@ def integral_2d_innovate(heatmap, rois):
     i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
     j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
 
-    i_ = i_ * scale_inv_x + start_x
-    j_ = j_ * scale_inv_y + start_y
+    #i_ = i_ * scale_inv_x + start_x
+    #j_ = j_ * scale_inv_y + start_y
     #print('i_ (after) as global coordinates', i_[0])
 
     #
