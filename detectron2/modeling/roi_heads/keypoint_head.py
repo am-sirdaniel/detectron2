@@ -54,6 +54,7 @@ def integral_2d_innovate(heatmap, rois):
     #print('origin logits bf heatmap', heatmap.shape)
 
     #implementing softmax (this was for a batch)
+    #softmax -max soln works even with neg values
     max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     print('max shape', max_.shape)
     heatmap = heatmap - max_
@@ -106,6 +107,7 @@ def integral_2d_innovate(heatmap, rois):
     # x_list = torch.linspace(0,1, h).cuda()
     # y_list = torch.linspace(0,1, w).cuda()
 
+    #DISCRETE FORM of integral is not expensive 
     #Our choice (0->1) ROI coordinates 
     x_list = torch.linspace(0,1, w).cuda()
     y_list = torch.linspace(0,1, h).cuda()
@@ -222,6 +224,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         valid = cat(valid, dim=0).to(dtype=torch.uint8) #single vector
         valid = torch.nonzero(valid).squeeze(1)
 
+    kps = torch.cat(kps)
     # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it separately
     if len(heatmaps) == 0 or valid.numel() == 0:
@@ -237,24 +240,35 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
+    #lets confirm equal total instances
+    try:
+    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+    except:
+    	print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
+    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
 
     # if use_2d:
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('pred_keypoint_logits after integral ', pred_integral['pose_2d'].shape)
-    pred_integral_1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
+    print('confirm shape after integral ', pred_integral['pose_2d'].shape)
+    pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
-    pred_integral_2 = pred_integral['pose_2d'].reshape(N, -1)
-    print('input to linear pred_integral', pred_integral_2.shape)
-    pred_3d = linermodel(pred_integral_2)
-    print('output from linear pred_integral', pred_3d.shape)
-    print('pred pose3d', pred_3d[0])
+    pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
+    print('input to linear pred_integral', pred_integral_v2.shape)
+
+    ######################################################
+    #Dont exclude any kps for 2nd model
+    #The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
+    pred_3d = linermodel(pred_integral_v2)
+    print('output shape from linear pred_integral', pred_3d.shape)
+    print('what pred pose3d looks like', pred_3d[0])
+    print('what GT pose3d looks like', pose3d_gt[0])
     pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
-    print('GT pose3d', pose3d_gt[0])
+    
 
-    print('pose3d_gt shape', pose3d_gt.shape) #N,18
+    print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
     #Normalize 3d GT by mean-std
     mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
@@ -281,7 +295,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #print('pose3d_LOSS: ', pose3d_loss)
 
     #2D loss
-    kps = torch.cat(kps)
+    
     #s1, s2 = kps.shape[0], kps.shape[1] #shape
     #exclude invlaid
     #kps = kps.view(s1*s2, -1)[valid]
@@ -398,14 +412,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('kps removed invalid shape', kps.shape)
 
 
-    print('example pred: ', pred_integral_1[-3:])
+    print('example pred: ', pred_integral_v1[-3:])
     print('example kps: ', kps[-3:])
     print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    print('min and max of pred_integral_1', torch.min(pred_integral_1), torch.max(kpred_integral_1))
+    print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(kpred_integral_v1))
     print('min and max of kps', torch.min(kps), torch.max(kps))
 
-    pose2d_loss = torch.nn.functional.mse_loss(pred_integral_1, kps)
+    pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps)
     print('original pose2d loss ', pose2d_loss)
     #print()
     #print('raw loss', pose2d_loss)
