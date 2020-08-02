@@ -190,16 +190,17 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
-
+    
+    print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
     #M = len(instances)
     #kps =  torch.zeros(M, )
     for instances_per_image in instances:
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        if len(keypoints) ==0:
-        	print('EMPTY KEYPOINTS, WHY?') 
-        	continue
+        # if len(keypoints) ==0:
+        # 	print('EMPTY KEYPOINTS, WHY?') 
+        # 	continue
 
 
         #print('other fields:', instances_per_image.get_fields())
