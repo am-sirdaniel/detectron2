@@ -255,39 +255,40 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('confirm shape after integral ', pred_integral['pose_2d'].shape)
     pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
+    ############################################################
+
     pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
     print('input to linear pred_integral', pred_integral_v2.shape)
 
-    ######################################################
-    #Dont exclude any kps for 2nd model
-    #The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
-    pred_3d = linermodel(pred_integral_v2)
-    print('output shape from linear pred_integral', pred_3d.shape)
-    print('what pred pose3d looks like', pred_3d[0])
-    print('what GT pose3d looks like', pose3d_gt[0])
-    pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
+    ##Dont exclude any kps for 2nd model
+    ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
+  #   pred_3d = linermodel(pred_integral_v2)
+  #   print('output shape from linear pred_integral', pred_3d.shape)
+  #   print('what pred pose3d looks like', pred_3d[0])
+  #   print('what GT pose3d looks like', pose3d_gt[0])
+  #   pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
     
 
-    print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
+  #   print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
-    #Normalize 3d GT by mean-std
-    mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
-         -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
-         1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
- 	torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
-         143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
-         161.9945, 159.9102, 146.8468, 146.0199]).cuda())
+  #   #Normalize 3d GT by mean-std
+  #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
+  #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
+  #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
+ 	# torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+  #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
+  #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
 
-    pose3d_gt = (pose3d_gt - mean_3d)/std_3d
-    print('normalized 3d pose GT sample: ', pose3d_gt[0])
+  #   pose3d_gt = (pose3d_gt - mean_3d)/std_3d
+  #   print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
-    #remove invalids
-    pred_3d = pred_3d.view(-1, 3)[valid]
-    pose3d_gt = pose3d_gt.view(-1, 3)[valid]
-    print('new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
+  #   #remove invalids
+  #   pred_3d = pred_3d.view(-1, 3)[valid]
+  #   pose3d_gt = pose3d_gt.view(-1, 3)[valid]
+  #   print('new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
 
 
-    
+    ##############################################################
 
 
 
@@ -419,7 +420,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(kpred_integral_v1))
     print('min and max of kps', torch.min(kps), torch.max(kps))
 
-    pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps)
+    pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps, reduction = 'sum')
     print('original pose2d loss ', pose2d_loss)
     #print()
     #print('raw loss', pose2d_loss)
