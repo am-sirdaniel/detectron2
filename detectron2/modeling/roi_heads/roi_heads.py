@@ -561,7 +561,7 @@ class StandardROIHeads(ROIHeads):
             #raise an error so the error message can point you to where the invicible forward is being called.
             #print('>>> losses:',losses)
             print('*********features keys', features.keys())
-            print('torch.isinf(features['p2']).sum()', torch.isinf(features['p2']).sum().item())
+            print('torch.isinf(features[p2]).sum()', torch.isinf(features['p2']).sum().item())
             if torch.isinf(features['p2']).sum().item() > 0:
                 #print('>>> scores:',losses)
                 #print('>>> proposal_deltas:',proposal_deltas)
