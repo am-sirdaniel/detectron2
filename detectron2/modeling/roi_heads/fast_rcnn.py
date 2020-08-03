@@ -452,10 +452,10 @@ class FastRCNNOutputLayers(nn.Module):
         """
         scores, proposal_deltas = predictions
 
-#         if torch.isnan(scores).sum().item() > 0:
-#             print('>>> scores:',scores)
-#             print('>>> proposal_deltas:',proposal_deltas)
-#             raise
+        if torch.isnan(scores).sum().item() > 0:
+            print('>>> scores:',scores)
+            print('>>> proposal_deltas:',proposal_deltas)
+            raise
             
         return FastRCNNOutputs(
             self.box2box_transform, scores, proposal_deltas, proposals, self.smooth_l1_beta
