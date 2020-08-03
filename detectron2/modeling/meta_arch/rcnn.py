@@ -124,12 +124,18 @@ class GeneralizedRCNN(nn.Module):
 
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
+            print('****proposals****', proposals)
+            print('****proposal_losses****', proposal_losses)
         else:
             assert "proposals" in batched_inputs[0]
             proposals = [x["proposals"].to(self.device) for x in batched_inputs]
             proposal_losses = {}
-
+        
+        
         _, detector_losses = self.roi_heads(images, features, proposals, gt_instances)
+        #print('****proposals****', proposals)
+        print('****detector_losses****', detector_losses)
+            
         if self.vis_period > 0:
             storage = get_event_storage()
             if storage.iter % self.vis_period == 0:
