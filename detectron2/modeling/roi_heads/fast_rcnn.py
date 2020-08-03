@@ -451,6 +451,12 @@ class FastRCNNOutputLayers(nn.Module):
                 that were used to compute predictions.
         """
         scores, proposal_deltas = predictions
+
+        if torch.isnan(scores).sum().item() > 0:
+            print('>>> scores:',scores)
+            print('>>> proposal_deltas:',proposal_deltas)
+            raise
+            
         return FastRCNNOutputs(
             self.box2box_transform, scores, proposal_deltas, proposals, self.smooth_l1_beta
         ).losses()
