@@ -494,10 +494,10 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
     print('check for box rois: ', [b for i, b in enumerate(pred_instances) if i < 3])
-    bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
-    rois = bboxes_flat.detach()
+    bboxes_flat = cat([b.pred_boxes.tensor for b in instances], dim=0)
+    pred_rois = bboxes_flat.detach()
 
-    out = integral_2d_innovate(pred_keypoint_logits, rois)
+    out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out['probabilitymap']
     print('heatmap_norm shape', heatmap_norm.shape)
     print('hip heatmap_norm', heatmap_norm[0][0][0])
