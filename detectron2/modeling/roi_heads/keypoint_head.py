@@ -494,7 +494,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
     print('check for box rois: ', [b for i, b in enumerate(pred_instances) if i < 3])
-    bboxes_flat = cat([b.pred_boxes.tensor for b in instances], dim=0)
+    bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
     out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
