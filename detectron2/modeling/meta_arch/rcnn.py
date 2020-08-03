@@ -117,8 +117,10 @@ class GeneralizedRCNN(nn.Module):
             gt_instances = [x["targets"].to(self.device) for x in batched_inputs]
         else:
             gt_instances = None
-
+        
+        print('images', images.tensor)
         features = self.backbone(images.tensor)
+        print('backbone features:', features)
 
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
