@@ -222,9 +222,9 @@ class FastRCNNOutputs(object):
         """
         if self._no_instances:
             # TODO 0.0 * pred.sum() is enough since PT1.6
-            print('======= self.pred_class_logits:', self.pred_class_logits)
-            print('======= self.pred_class_logits.sum():', self.pred_class_logits.sum())
-            print('=======  0.0 * self.pred_class_logits.sum():',  0.0 * self.pred_class_logits.sum())
+#             print('======= self.pred_class_logits:', self.pred_class_logits)
+#             print('======= self.pred_class_logits.sum():', self.pred_class_logits.sum())
+#             print('=======  0.0 * self.pred_class_logits.sum():',  0.0 * self.pred_class_logits.sum())
             # return 0.0 * F.cross_entropy()
             return 0.0 * self.pred_class_logits.sum()
             # return 0.0 * F.cross_entropy(
@@ -237,9 +237,9 @@ class FastRCNNOutputs(object):
             self._log_accuracy()
             result = F.cross_entropy(self.pred_class_logits, self.gt_classes, reduction="mean")
             print('#### self.pred_class_logits:', self.pred_class_logits)
-            print('#### self.pred_class_logits.sum():', self.pred_class_logits.sum())
+#             print('#### self.pred_class_logits.sum():', self.pred_class_logits.sum())
             print(' #### self.gt_classes',self.gt_classes)
-            print('#### F.cross_entropy(...:', result)
+#             print('#### F.cross_entropy(...:', result)
             return result
 
     def smooth_l1_loss(self):
