@@ -118,13 +118,13 @@ class GeneralizedRCNN(nn.Module):
         else:
             gt_instances = None
         
-        print('images', images.tensor)
+        #print('images', images.tensor)
         features = self.backbone(images.tensor)
         print('backbone features:', features)
 
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
-            print('****proposals****', proposals)
+            #print('****proposals****', proposals)
             print('****proposal_losses****', proposal_losses)
         else:
             assert "proposals" in batched_inputs[0]
