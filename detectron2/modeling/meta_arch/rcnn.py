@@ -120,7 +120,7 @@ class GeneralizedRCNN(nn.Module):
         
         #print('images', images.tensor)
         features = self.backbone(images.tensor)
-        print('backbone features:', features)
+        #print('backbone features:', features)
 
         if self.proposal_generator:
             proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
