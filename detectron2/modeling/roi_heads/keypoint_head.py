@@ -492,26 +492,31 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     if pred_keypoint_logits.shape[0] == 0 :
         return None
 
-    out = integral_2d_innovate(pred_keypoint_logits)
+    # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
+    print('check for box rois: ', [b for i, b in enumerate(pred_instances) if i < 3])
+    bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
+    rois = bboxes_flat.detach()
+
+    out = integral_2d_innovate(pred_keypoint_logits, rois)
     heatmap_norm = out['probabilitymap']
     print('heatmap_norm shape', heatmap_norm.shape)
     print('hip heatmap_norm', heatmap_norm[0][0][0])
     print('heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    print('scores: ', scores)
+    #print('scores: ', scores)
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
 
     #de-normalize
-    xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
-    i_ = (i_ * (xmax - xmin)) + xmin
-    j_ = (j_ * (ymax - ymin)) + ymin
+    #xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    #i_ = (i_ * (xmax - xmin)) + xmin
+    #j_ = (j_ * (ymax - ymin)) + ymin
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
-    print('pred keypoint_results before split', keypoint_results.shape)
+    #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     #print('pred keypoint_results after split', keypoint_results.shape)
