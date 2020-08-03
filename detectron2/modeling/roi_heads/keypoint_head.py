@@ -520,9 +520,9 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     num_instances_per_image = [len(i) for i in pred_instances]
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     try:
-    print('pred keypoint_results after split', keypoint_results.tensor.shape)
-    print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
-    print('pred_instances', len(pred_instances))
+        print('pred keypoint_results after split', keypoint_results.tensor.shape)
+        print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
+        print('pred_instances', len(pred_instances))
     except:
         pass
 
