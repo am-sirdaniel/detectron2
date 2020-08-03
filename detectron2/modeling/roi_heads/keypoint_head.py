@@ -62,8 +62,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         print('GT keypoints', keypoints.tensor.shape, keypoints.tensor[0][0])
 
         #[xmin,ymin,w,h]	
-        print('looking for gt boxes [xmin,ymin,w,h] format', instances_per_image.gt_boxes.shape, instances_per_image.gt_boxes)
-        print('roposal_boxes in xyxy format', instances_per_image.proposal_boxes.tensor.shape, instances_per_image.proposal_boxes.tensor[0])
+        #print('looking for gt boxes [xmin,ymin,w,h] format', instances_per_image.gt_boxes.shape, instances_per_image.gt_boxes)
+        #print('roposal_boxes in xyxy format', instances_per_image.proposal_boxes.tensor.shape, instances_per_image.proposal_boxes.tensor[0])
 
         heatmaps_per_image, valid_per_image = keypoints.to_heatmap(
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
