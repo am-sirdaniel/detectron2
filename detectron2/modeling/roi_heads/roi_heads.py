@@ -397,6 +397,8 @@ class Res5ROIHeads(ROIHeads):
 
         if self.training:
             del features
+            print('predictions', predictions)
+            print('proposals', proposals)
             losses = self.box_predictor.losses(predictions, proposals)
             if self.mask_on:
                 proposals, fg_selection_masks = select_foreground_proposals(
