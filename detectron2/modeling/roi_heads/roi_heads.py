@@ -557,6 +557,12 @@ class StandardROIHeads(ROIHeads):
         if self.training:
             print('features', features)
             losses = self._forward_box(features, proposals)
+            
+            #raise an error so the error message can point you to where the invicible forward is being called.
+            if torch.isnan(losses).sum().item() > 0:
+                print('>>> scores:',losses)
+                #print('>>> proposal_deltas:',proposal_deltas)
+                raise
             # Usually the original proposals used by the box head are used by the mask, keypoint
             # heads. But when `self.train_on_pred_boxes is True`, proposals will contain boxes
             # predicted by the box head.
