@@ -559,8 +559,8 @@ class StandardROIHeads(ROIHeads):
             losses = self._forward_box(features, proposals)
             
             #raise an error so the error message can point you to where the invicible forward is being called.
-            print('>>> scores:',losses)
-            if torch.isnan(losses['loss_cls']).sum().item() > 0:
+            #print('>>> losses:',losses)
+            if torch.isinf(features['p2']).sum().item() > 0:
                 #print('>>> scores:',losses)
                 #print('>>> proposal_deltas:',proposal_deltas)
                 raise
