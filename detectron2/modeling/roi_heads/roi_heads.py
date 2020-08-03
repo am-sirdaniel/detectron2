@@ -615,8 +615,10 @@ class StandardROIHeads(ROIHeads):
             In inference, a list of `Instances`, the predicted instances.
         """
         features = [features[f] for f in self.in_features]
+        print('##########features', features)
         box_features = self.box_pooler(features, [x.proposal_boxes for x in proposals])
         box_features = self.box_head(box_features)
+        print('##########box_features', box_features)
         predictions = self.box_predictor(box_features)
         del box_features
 
