@@ -398,8 +398,8 @@ class Res5ROIHeads(ROIHeads):
 
         if self.training:
             del features
-            print('==========predictions', predictions)
-            print('==========proposals', proposals)
+            #print('==========predictions', predictions)
+            #print('==========proposals', proposals)
             losses = self.box_predictor.losses(predictions, proposals)
             if self.mask_on:
                 proposals, fg_selection_masks = select_foreground_proposals(
@@ -555,13 +555,13 @@ class StandardROIHeads(ROIHeads):
         del targets
 
         if self.training:
-            print('features', features)
-            print('*********features keys', features.keys())
-            print('torch.isinf(features[p2]).sum()', torch.isinf(features['p2']).sum().item())
-            if torch.isinf(features['p2']).sum().item() > 0:
+            #print('features', features)
+            #print('*********features keys', features.keys())
+            #print('torch.isinf(features[p2]).sum()', torch.isinf(features['p2']).sum().item())
+            #if torch.isinf(features['p2']).sum().item() > 0:
                 #print('>>> scores:',losses)
                 #print('>>> proposal_deltas:',proposal_deltas)
-                raise
+             #   raise
                 
             losses = self._forward_box(features, proposals)
             
@@ -628,10 +628,10 @@ class StandardROIHeads(ROIHeads):
             In inference, a list of `Instances`, the predicted instances.
         """
         features = [features[f] for f in self.in_features]
-        print('##########features', features)
+        #print('##########features', features)
         box_features = self.box_pooler(features, [x.proposal_boxes for x in proposals])
         box_features = self.box_head(box_features)
-        print('##########box_features', box_features)
+        #print('##########box_features', box_features)
         predictions = self.box_predictor(box_features)
         del box_features
 
@@ -643,8 +643,8 @@ class StandardROIHeads(ROIHeads):
                     )
                     for proposals_per_image, pred_boxes_per_image in zip(proposals, pred_boxes):
                         proposals_per_image.proposal_boxes = Boxes(pred_boxes_per_image)
-            print('##########predictions', predictions)
-            print('##########proposals', proposals)
+            #print('##########predictions', predictions)
+            #print('##########proposals', proposals)
             return self.box_predictor.losses(predictions, proposals)
         else:
             pred_instances, _ = self.box_predictor.inference(predictions, proposals)
