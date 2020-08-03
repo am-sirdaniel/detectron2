@@ -493,7 +493,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         return None
 
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    print('check for box rois: ', [b for i, b in enumerate(pred_instances) if i < 3])
+    print('check for box rois inference: ', [b for i, b in enumerate(pred_instances) if i < 3])
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
@@ -520,20 +520,25 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     num_instances_per_image = [len(i) for i in pred_instances]
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     try:
-        print('pred keypoint_results after split', keypoint_results.tensor.shape)
-        print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
-        print('pred_instances', len(pred_instances))
+    	print('pred keypoint_results after split', keypoint_results.tensor.shape)
+	    print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
+	    print('pred_instances', len(pred_instances))
     except:
-        pass
+    	pass
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        #print('type:', instances_per_image.pred_keypoints.shape)
+        print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
         
     #instances_per_image.pred_keypoints = keypoint_results
+
+    # for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
+    #     # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
+    #     instances_per_image.pred_keypoints = keypoint_results_per_image
+
 
 ########################################################## MY CODE
 
