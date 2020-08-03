@@ -536,7 +536,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         print('keypoint_results_per_image shape', keypoint_results_per_image.shape)
         print('keypoint_results_per_image', keypoint_results_per_image.cpu())
         #print('instances_per_image:', instances_per_image)
-        instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
+        instances_per_image.pred_keypoints = keypoint_results #.unsqueeze(0)
         
     #instances_per_image.pred_keypoints = keypoint_results
 
