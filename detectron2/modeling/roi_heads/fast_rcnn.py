@@ -235,7 +235,9 @@ class FastRCNNOutputs(object):
         else:
             #print('self.pred_class_logits',self.pred_class_logits[-3:])
             self._log_accuracy()
-            return F.cross_entropy(self.pred_class_logits, self.gt_classes, reduction="mean")
+            result = F.cross_entropy(self.pred_class_logits, self.gt_classes, reduction="mean")
+            print('==== F.cross_entropy(...:', result)
+            return result
 
     def smooth_l1_loss(self):
         """
