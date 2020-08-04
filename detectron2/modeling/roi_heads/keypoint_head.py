@@ -329,8 +329,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #remove invalids
     pred_3d = pred_3d.view(-1, 3)[valid]
+    print('solving a bug: ', pose3d_gt.shape, type(pose3d_gt))
+    print('reshape', pose3d_gt.reshape(-1,3).shape, valid)
+    print('reshape', pose3d_gt.view(-1,3).shape)
     pose3d_gt = pose3d_gt.view(-1, 3)[valid]
-    print('invalid removed, new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
+    print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
+
 
     #consider all valid
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
@@ -559,6 +563,7 @@ def weight_init(m):
         pass
         #nn.init.constant(m.bias, 0)
         #nn.init.kaiming_normal_(m.weight)
+        #nn.init.uniform_(m.weight, 0, 1)
 
 
 class Linear(nn.Module):
@@ -764,6 +769,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
                 #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                #nn.init.uniform_(param, 0, 1)
 
     @classmethod
     def from_config(cls, cfg, input_shape):
