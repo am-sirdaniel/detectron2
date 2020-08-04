@@ -205,7 +205,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         #print('other fields:', instances_per_image.get_fields())
         #print('can we get image dim programmatically? :', instances_per_image.ke
         #############################################
-        pose3d_pts = instances_per_image.gt_pose3d.cuda()
+		pose3d_pts = instances_per_image.gt_pose3d.cuda()
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
         ############################################################
         #e.g (8,6,3)
@@ -309,8 +309,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pred_3d = linermodel(pred_integral_v2)
     print('output shape from linear pred_integral', pred_3d.shape)
     print('what pred pose3d looks like', pred_3d[0])
-    print('what GT pose3d looks like', pose3d_gt[0])
     pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
+    print('what GT pose3d looks like', pose3d_gt[0])
+    
     
 
     print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
