@@ -223,7 +223,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         ###################################
-		p3d.append(pose3d_pts)
+        p3d.append(pose3d_pts)
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
