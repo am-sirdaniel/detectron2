@@ -327,13 +327,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pose3d_gt = (pose3d_gt - mean_3d)/std_3d
     print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
-    #remove invalids
-    pred_3d = pred_3d.view(-1, 3)[valid]
-    print('solving a bug: ', pose3d_gt.shape, type(pose3d_gt))
-    print('reshape', pose3d_gt.reshape(-1,3).shape, valid)
-    print('reshape', pose3d_gt.view(-1,3).shape)
-    pose3d_gt = pose3d_gt.view(-1, 3)[valid]
-    print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
+    pred_3d = pred_3d.view(-1, 3) #[valid]
+    #print('solving a bug: ', pose3d_gt.shape, type(pose3d_gt))
+    #print('reshape', pose3d_gt.reshape(-1,3).shape, valid)
+    #print('reshape', pose3d_gt.view(-1,3).shape)
+    pose3d_gt = pose3d_gt.view(-1, 3) #[valid]
+    #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
 
 
     #consider all valid
