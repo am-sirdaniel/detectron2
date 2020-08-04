@@ -200,15 +200,6 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         valid = cat(valid, dim=0).to(dtype=torch.uint8) #single vector
         valid = torch.nonzero(valid).squeeze(1)
 
-    # try:
-    # 	kps = torch.cat(kps)
-    # except:
-    # 	#empty tensors, so handle it separately
-    # 	print('Empty kps', kps)
-    # 	global _TOTAL_SKIPPED_KPS
-    #     _TOTAL_SKIPPED_KPS += 1
-    # 	return pred_keypoint_logits.sum() * 0
-
 
     # torch.mean (in binary_cross_entropy_with_logits) doesn't
     # accept empty tensors, so handle it separately
@@ -317,7 +308,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.60 + pose3d_loss*0.50
+    comb_loss = pose2d_loss*0.60 + pose3d_loss*0.40
 
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
@@ -516,7 +507,8 @@ class BaseKeypointRCNNHead(nn.Module):
         self.loss_normalizer = loss_normalizer
         self.linermodel = LinearModel()
         self.linermodel.apply(weight_init)
-
+        print(">>> total params: {:.2f}M".format(sum(p.numel() for p in self.linermodel.parameters()) / 1000000.0))
+        
     @classmethod
     def from_config(cls, cfg, input_shape):
         ret = {
