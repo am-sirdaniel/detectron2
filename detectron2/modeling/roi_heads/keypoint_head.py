@@ -308,7 +308,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.60 + pose3d_loss*0.40
+    comb_loss = pose2d_loss*0.50 + pose3d_loss*0.50
 
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
