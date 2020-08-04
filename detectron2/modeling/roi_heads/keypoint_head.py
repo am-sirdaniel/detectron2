@@ -223,7 +223,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         ###################################
-        p3d.append(pose3d_pts)
+		p3d.append(pose3d_pts)
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -301,8 +301,6 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     my_normalizer= 720 + 1280 
     pose2d_loss /= my_normalizer
 
-    print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
-
 
     ############################################################
 
@@ -342,14 +340,17 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #consider all valid
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
-    try:
-    	print('pose3d_LOSS: ', pose3d_loss)
-    except:
-    	print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
+    # try:
+    # 	print('pose3d_LOSS: ', pose3d_loss)
+    # except:
+    # 	print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.65 + pose3d_loss*0.35
+    comb_loss = pose2d_loss*0.60 + pose3d_loss*0.50
+
+    print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
+    print('pose3d_LOSS: ', pose3d_loss)
     print('combined_loss: ', comb_loss)
     
 
