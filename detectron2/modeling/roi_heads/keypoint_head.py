@@ -270,6 +270,35 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print('confirm shape after integral ', pred_integral['pose_2d'].shape)
     pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
+
+    s1, s2 = kps.shape[0], kps.shape[1] #shape
+    print('kps shape before removing invalid', kps.shape)
+    kps = kps.view(s1*s2, -1)[valid]
+    print('kps removed invalid shape', kps.shape)
+
+
+    print('example pred: ', pred_integral_v1[-3:])
+    print('example kps: ', kps[-3:])
+    print()
+    #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
+    print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(pred_integral_v1))
+    print('min and max of kps', torch.min(kps), torch.max(kps))
+
+    pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps, reduction = 'sum')
+    print('original pose2d loss ', pose2d_loss)
+
+    if normalizer is None:
+        normalizer = valid.numel()
+    pose2d_loss /= normalizer
+
+    
+    #
+    my_normalizer= 720 + 1280 
+    pose2d_loss /= my_normalizer
+
+    print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
+
+
     ############################################################
 
     pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
@@ -277,38 +306,40 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     ##Dont exclude any kps for 2nd model
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
-  #   pred_3d = linermodel(pred_integral_v2)
-  #   print('output shape from linear pred_integral', pred_3d.shape)
-  #   print('what pred pose3d looks like', pred_3d[0])
-  #   print('what GT pose3d looks like', pose3d_gt[0])
-  #   pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
+    pred_3d = linermodel(pred_integral_v2)
+    print('output shape from linear pred_integral', pred_3d.shape)
+    print('what pred pose3d looks like', pred_3d[0])
+    print('what GT pose3d looks like', pose3d_gt[0])
+    pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
     
 
-  #   print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
+    print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
   #   #Normalize 3d GT by mean-std
-  #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
-  #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
-  #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
- 	# torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
-  #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
-  #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
+    mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
+         -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
+         1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
+ 	torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+         143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
+         161.9945, 159.9102, 146.8468, 146.0199]).cuda())
 
-  #   pose3d_gt = (pose3d_gt - mean_3d)/std_3d
-  #   print('normalized 3d pose GT sample: ', pose3d_gt[0])
+    pose3d_gt = (pose3d_gt - mean_3d)/std_3d
+    print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
-  #   #remove invalids
-  #   pred_3d = pred_3d.view(-1, 3)[valid]
-  #   pose3d_gt = pose3d_gt.view(-1, 3)[valid]
-  #   print('new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
+    #remove invalids
+    pred_3d = pred_3d.view(-1, 3)[valid]
+    pose3d_gt = pose3d_gt.view(-1, 3)[valid]
+    print('invalid removed, new shapes: pred_3d, pose3d_gt', pred_3d.shape, pose3d_gt.shape)
 
+    #consider all valid
+    pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
+    print('pose3d_LOSS: ', pose3d_loss)
 
     ##############################################################
 
-
-
-    #pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
-    #print('pose3d_LOSS: ', pose3d_loss)
+    comb_loss = pose2d_loss*0.65 + pose3d_loss*0.35
+    print('combined_loss: ', comb_loss)
+    
 
     #2D loss
     
@@ -422,49 +453,25 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #print('raw kps shape', kps.shape)
     #keypoint_loss = torch.nn.functional.mse_loss(pred_integral, keypoint_targets[valid])
-    s1, s2 = kps.shape[0], kps.shape[1] #shape
-    print('kps shape before removing invalid', kps.shape)
-    kps = kps.view(s1*s2, -1)[valid]
-    print('kps removed invalid shape', kps.shape)
-
-
-    print('example pred: ', pred_integral_v1[-3:])
-    print('example kps: ', kps[-3:])
-    print()
-    #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(pred_integral_v1))
-    print('min and max of kps', torch.min(kps), torch.max(kps))
-
-    pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps, reduction = 'sum')
-    print('original pose2d loss ', pose2d_loss)
+    
     #print()
     #print('raw loss', pose2d_loss)
 
     #################################################
-    #comb_loss = pose2d_loss *0.5 + pose3d_loss *0.5
-    #print('comb_loss: ', comb_loss)
+    
 
     # # keypoint_loss = F.cross_entropy(
     # #     pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
     # # )m
 
     # If a normalizer isn't specified, normalize by the number of visible keypoints in the minibatch
-    if normalizer is None:
-        normalizer = valid.numel()
-    pose2d_loss /= normalizer
-
     
-    #
-    my_normalizer= 720 + 1280 
-    pose2d_loss /= my_normalizer
-
-    print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print()
     print()
     print()
     print()
     print()
-    return pose2d_loss
+    return comb_loss
 
 
 def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
@@ -516,27 +523,23 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
-    print('keypoint_results', keypoint_results)
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
-    print('num_instances_per_image', num_instances_per_image)
-    print('keypoint_results shape', keypoint_results.shape)
-    print('pred_instances', len(pred_instances))
-    #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     try:
         print('pred keypoint_results after split', keypoint_results.tensor.shape)
         print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
-        
+        print('pred_instances', len(pred_instances))
     except:
         pass
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
-        print('keypoint_results_per_image shape', keypoint_results_per_image.shape)
-        print('keypoint_results_per_image', keypoint_results_per_image.cpu())
+        print('keypoint_results_per_image', keypoint_results_per_image.shape)
+        print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
-        instances_per_image.pred_keypoints = keypoint_results #.unsqueeze(0)
+        instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
         
     #instances_per_image.pred_keypoints = keypoint_results
 
@@ -551,7 +554,7 @@ def weight_init(m):
     if isinstance(m, nn.Linear):
         pass
         #nn.init.constant(m.bias, 0)
-        #nn.init.kaiming_normal(m.weight)
+        nn.init.kaiming_normal(m.weight)
 
 
 class Linear(nn.Module):
@@ -654,7 +657,7 @@ class BaseKeypointRCNNHead(nn.Module):
         assert loss_normalizer == "visible" or isinstance(loss_normalizer, float), loss_normalizer
         self.loss_normalizer = loss_normalizer
         self.linermodel = LinearModel()
-        #self.linermodel.apply(weight_init)
+        self.linermodel.apply(weight_init)
 
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -756,7 +759,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
                 pass
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
 
     @classmethod
     def from_config(cls, cfg, input_shape):
