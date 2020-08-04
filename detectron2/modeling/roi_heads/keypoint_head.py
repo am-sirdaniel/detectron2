@@ -554,7 +554,7 @@ def weight_init(m):
     if isinstance(m, nn.Linear):
         pass
         #nn.init.constant(m.bias, 0)
-        nn.init.kaiming_normal_(m.weight)
+        #nn.init.kaiming_normal_(m.weight)
 
 
 class Linear(nn.Module):
@@ -759,7 +759,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
                 pass
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
 
     @classmethod
     def from_config(cls, cfg, input_shape):
