@@ -334,7 +334,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #consider all valid
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
-    print('pose3d_LOSS: ', pose3d_loss)
+    try:
+    	print('pose3d_LOSS: ', pose3d_loss)
+    except:
+    	print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
 
     ##############################################################
 
