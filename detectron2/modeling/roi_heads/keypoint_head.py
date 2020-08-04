@@ -205,7 +205,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         #print('other fields:', instances_per_image.get_fields())
         #print('can we get image dim programmatically? :', instances_per_image.ke
         #############################################
-		pose3d_pts = instances_per_image.gt_pose3d.cuda()
+        pose3d_pts = instances_per_image.gt_pose3d.cuda()
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
         ############################################################
         #e.g (8,6,3)
