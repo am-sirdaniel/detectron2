@@ -12,15 +12,15 @@ import plotting
 
 #import utils
 import plotting
-import triangulate 
+#import triangulate 
 import numpy as np
 
-from PIL import Image
+#from PIL import Image
 import pandas as pd
-import torch
-import torchvision
-import torchvision.transforms as transforms
-import h5py
+#import torch
+#import torchvision
+#import torchvision.transforms as transforms
+#import h5py
 import os
 
 #import torch.nn.functional as nn
