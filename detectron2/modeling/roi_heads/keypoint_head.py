@@ -167,7 +167,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     color_order_ego = [1, 3, 5, 7, 2, 4, 6,];
 
-	bones_ego = [[1,2], [1,3],[3,5],[2,4], [4,6]]
+    bones_ego = [[1,2], [1,3],[3,5],[2,4], [4,6]]
 
     N, K, H, W = pred_keypoint_logits.shape
     keypoint_side_len = pred_keypoint_logits.shape[2]
@@ -339,47 +339,32 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     print()
 
     # plot progress
-	if np.random.choice([0,1]):
-		# clear figures for a new update
-		fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-		axes=fig.subplots(1,3)
+    if np.random.choice([0,1]):
+       # clear figures for a new update
+        fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
+        axes=fig.subplots(1,3)
 
-		axs=[]
-		f = plt.figure(figsize=(10,10))
-		axs.append(f.add_subplot(2,2,3, projection='3d'))
-		axs.append(f.add_subplot(2,2,4, projection='3d'))
-		#print(len(axs), "hiiiiiiiiiii")
-		#plotPoseOnImage([], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
-		#axs[0].show()
-		#axes[1] = fig.add_subplot(2,2,3, projection='3d')
-		#print(batch_cpu['img'][0].shape, "batch_cpu")
-		#print(batch_cpu['pose_2d'][0], "BATCH")
-		plotting.plot_3Dpose(axs[0], pose3d_gt[0].T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-		plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-		'''
-		for j in range(18):
-		  axs[0].quiver(batch_cpu['poses3d'][0][0][j][0], batch_cpu['poses3d'][0][0][j][1], batch_cpu['poses3d'][0][0][j][2],
-		               batch_cpu['pose_3d'][0][j][0].detach(), batch_cpu['pose_3d'][0][j][1].detach(), batch_cpu['pose_3d'][0][j][2].detach(),
-		               color = colorArray[j], alpha = .8, lw = 3)
-		    
-		for j in range(18):
-		  axs[1].quiver(batch_cpu['poses3d'][0][0][j][0], batch_cpu['poses3d'][0][0][j][1], batch_cpu['poses3d'][0][0][j][2],
-		               pred_cpu['pose_3d'][0][j][0].detach()*10, pred_cpu['pose_3d'][0][j][1].detach()*10, pred_cpu['pose_3d'][0][j][2].detach()*10,
-		               color = colorArray[j], alpha = .8, lw = 3) 
-		'''
-		axes[1].plot(losses)
-		axes[1].set_yscale('log')
-		# clear output window and diplay updated figure
-		axes[2].plot(low_lossArray)
-		axes[2].set_yscale('linear')
+        axs=[]
+        f = plt.figure(figsize=(10,10))
+        axs.append(f.add_subplot(2,2,3, projection='3d'))
+        axs.append(f.add_subplot(2,2,4, projection='3d'))
 
-		display.clear_output(wait=True)
-		#display.display(plt.gcf())
-		plt.show()
-		#plt.show()
-		plt.close()
-		#display.display()
-		#print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
+        plotting.plot_3Dpose(axs[0], pose3d_gt[0].T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+
+        axes[1].plot(losses)
+        axes[1].set_yscale('log')
+        # clear output window and diplay updated figure
+        axes[2].plot(low_lossArray)
+        axes[2].set_yscale('linear')
+	
+        display.clear_output(wait=True)
+        #display.display(plt.gcf())
+        plt.show()
+        #plt.show()
+        plt.close()
+        #display.display()
+        #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
 
     return comb_loss
 
