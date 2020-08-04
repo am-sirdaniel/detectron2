@@ -9,6 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 import numpy as np
 import plotting
+import matplotlib.pyplot as plt
 
 #import utils
 import plotting
@@ -326,7 +327,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.50 + pose3d_loss*0.50
+    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30
 
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
