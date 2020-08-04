@@ -554,7 +554,7 @@ def weight_init(m):
     if isinstance(m, nn.Linear):
         pass
         #nn.init.constant(m.bias, 0)
-        nn.init.kaiming_normal(m.weight)
+        nn.init.kaiming_normal_(m.weight)
 
 
 class Linear(nn.Module):
