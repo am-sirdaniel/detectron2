@@ -207,6 +207,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         #############################################
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
+        
         ############################################################
         #e.g (8,6,3)
         #print('Daniel test keypoints', keypoints.tensor.shape)
@@ -222,7 +223,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
         #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         ###################################
-	#p3d.append(pose3d_pts)
+		p3d.append(pose3d_pts)
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -250,6 +251,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     
     kps = torch.cat(kps)
+    p3d = torch.cat(p3d)
+    print('GT pose2d shape', kps.shape)
+    print('GT pose3d shape', p3d.shape)
+
     print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
@@ -308,8 +313,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
     pred_3d = linermodel(pred_integral_v2)
     print('output shape from linear pred_integral', pred_3d.shape)
-    print('what pred pose3d looks like', pred_3d[0])
-    pose3d_gt = pose3d_pts.reshape(pose3d_pts.shape[0],-1)
+    print('what pred pose3d looks like', p3d[0])
+    pose3d_gt = p3d.reshape(p3d.shape[0],-1)
     print('what GT pose3d looks like', pose3d_gt[0])
     
     
