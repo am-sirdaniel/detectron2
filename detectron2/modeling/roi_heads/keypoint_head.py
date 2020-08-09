@@ -279,6 +279,25 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pred_integral_v1 = pred_integral['pose_2d'].view(N * 6, -1)[valid]
 
 
+    #normalize kps
+    
+    kp_mean = torch.Tensor([[942.8855, 326.6883],
+        [941.4666, 405.1611],
+        [740.3054, 304.9617],
+        [737.7035, 421.5804],
+        [530.7987, 290.6349],
+        [534.2322, 425.0898]]).cuda()
+
+    kp_std = torch.Tensor([[ 94.6912,  31.1105],
+        [ 96.2150,  31.2903],
+        [ 89.2333,  28.6181],
+        [ 89.7864,  32.5412],
+        [109.8567,  45.1855],
+        [ 92.0391,  33.6960]]).cuda()
+
+    #global mean-std normalization
+    kps = (kps - kp_mean)/kp_std
+
     s1, s2 = kps.shape[0], kps.shape[1] #shape
     print('kps shape before removing invalid for 2d', kps.shape)
     kps = kps.view(s1*s2, -1)[valid]
@@ -291,6 +310,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(pred_integral_v1))
     print('min and max of kps', torch.min(kps), torch.max(kps))
+
 
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps, reduction = 'sum')
     print('original pose2d loss ', pose2d_loss)
