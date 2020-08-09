@@ -65,6 +65,7 @@ def build_keypoint_head(cfg, input_shape):
 def integral_2d_innovate(heatmap, rois):
     #print('2d Innovate being used')
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
+    heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
     #print('origin logits bf heatmap', heatmap.shape)
 
@@ -142,10 +143,10 @@ def integral_3d_innovate(heatmap_):
     h, w = heatmap_.shape[2], heatmap_.shape[3]
 
     # H Heatmap, X,Y,Z location maps
-    heatmap = heatmap_[:,0:18,:,:]
-    location_map_X = heatmap_[:,18:36,:,:]
-    location_map_Y = heatmap_[:,36:54,:,:]
-    location_map_Z = heatmap_[:,54:72,:,:]
+    heatmap = heatmap_[:,0:6,:,:]
+    location_map_X = heatmap_[:,6:12,:,:]
+    location_map_Y = heatmap_[:,12:18,:,:]
+    location_map_Z = heatmap_[:,18:24,:,:]
 
      #implementing softmax ,#soving the numerical problem
     heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) 
