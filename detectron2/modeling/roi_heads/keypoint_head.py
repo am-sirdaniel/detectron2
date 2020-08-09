@@ -313,7 +313,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pred_3d = integral_3d_innovate(pred_keypoint_logits)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape)
     print('what pred pose3d looks like', p3d[0])
-    pose3d_gt = p3d.reshape(p3d.shape[0],-1)
+    pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
     print('what GT pose3d looks like', pose3d_gt[0])
 
     ##Dont exclude any kps for 2nd model
@@ -328,20 +328,20 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
-  #   #Normalize 3d GT by global mean-std
-  #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
-  #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
-  #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
-    # torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
-  #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
-  #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
+    #Normalize 3d GT by global mean-std
+    mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
+         -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
+         1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
+    torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+         143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
+         161.9945, 159.9102, 146.8468, 146.0199]).cuda())
 
     #hip normalization first
     #hip_mid = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
     #pose3d_gt = pose3d_gt - hip_mid
 
-    # pose3d_gt = (pose3d_gt - mean_3d)/std_3d
-    # print('normalized 3d pose GT sample: ', pose3d_gt[0])
+    pose3d_gt = (pose3d_gt - mean_3d)/std_3d
+    print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
     #pred_3d = pred_3d.view(-1, 3) #[valid]
     #print('solving a bug: ', pose3d_gt.shape, type(pose3d_gt))
@@ -352,6 +352,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pred_3d_valid = pred_3d['pose_3d'].view(N * 6, -1)[valid]
 
 
+    pose3d_gt = pose3d_gt.reshape(pose3d_gt.shape[0], 6, 3)
     m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
     print('kps shape before removing invalid for 3d', pose3d_gt.shape)
     pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
