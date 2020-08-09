@@ -137,9 +137,9 @@ def integral_2d_innovate(heatmap, rois):
     #print('pose relative global coordinates', pose[0][0])
     return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
 
-def integral_3d_innovate(heatmap):
-	#heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
-    h, w = heatmap.shape[2], heatmap.shape[3]
+def integral_3d_innovate(heatmap_):
+    #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
+    h, w = heatmap_.shape[2], heatmap_.shape[3]
 
     # H Heatmap, X,Y,Z location maps
     heatmap = heatmap_[:,0:18,:,:]
@@ -170,7 +170,6 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
             of instances in the batch, K is the number of keypoints, and S is the side length
             of the keypoint heatmap. The values are spatial logits.
             predicted keypoint heatmaps in `pred_keypoint_logits`
-
         instances (list[Instances]): A list of M Instances, where M is the batch size.
             These instances are predictions from the model
             that are in 1:1 correspondence with pred_keypoint_logits.
@@ -207,8 +206,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
             continue
         keypoints = instances_per_image.gt_keypoints
         # if len(keypoints) ==0:
-        # 	print('EMPTY KEYPOINTS, WHY?') 
-        # 	continue
+        #   print('EMPTY KEYPOINTS, WHY?') 
+        #   continue
 
 
         #print('other fields:', instances_per_image.get_fields())
@@ -262,10 +261,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #lets confirm equal total instances
     try:
-    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
     except:
-    	print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
-    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+        print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
+        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
 
     # if use_2d:
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
@@ -329,7 +328,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
   #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
   #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
   #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
- 	# torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+    # torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
   #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
   #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
 
@@ -372,9 +371,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #consider all valid
     #pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
     # try:
-    # 	print('pose3d_LOSS: ', pose3d_loss)
+    #   print('pose3d_LOSS: ', pose3d_loss)
     # except:
-    # 	print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
+    #   print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
 
     ##############################################################
 
@@ -410,7 +409,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #     # clear output window and diplay updated figure
     #     axes[2].plot(low_lossArray)
     #     axes[2].set_yscale('linear')
-	
+    
     #     display.clear_output(wait=True)
     #     #display.display(plt.gcf())
     #     plt.show()
@@ -730,8 +729,4 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
 
