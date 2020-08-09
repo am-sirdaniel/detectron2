@@ -111,8 +111,8 @@ def integral_2d_innovate(heatmap_, rois):
 
     #DISCRETE FORM of integral is not expensive 
     #Our choice (0->1) ROI coordinates 
-    x_list = torch.linspace(0,1, w).cuda()
-    y_list = torch.linspace(0,1, h).cuda()
+    x_list = torch.linspace(-1,1, w).cuda()
+    y_list = torch.linspace(-1,1, h).cuda()
     # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
     i,j = torch.meshgrid(x_list, y_list)
 
@@ -198,7 +198,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
 
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
+    #print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
@@ -332,7 +332,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     pred_3d = integral_3d_innovate(pred_keypoint_logits)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape)
-    print('what pred pose3d looks like', p3d[0])
+    print('what pred pose3d looks like', pred_3d[0])
     pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
     print('what GT pose3d looks like', pose3d_gt[0])
 
