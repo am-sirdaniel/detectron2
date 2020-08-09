@@ -307,7 +307,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
     #print('input to linear pred_integral', pred_integral_v2.shape)
 
-    pred_3d = integral_3d_innovate(pred_keypoint_logits, rois)
+    pred_3d = integral_3d_innovate(pred_keypoint_logits)
     print('output shape from 3d pred_integral', pred_3d.shape)
     print('what pred pose3d looks like', p3d[0])
     pose3d_gt = p3d.reshape(p3d.shape[0],-1)
