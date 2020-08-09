@@ -192,6 +192,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     bones_ego = [[1,2], [1,3],[3,5],[2,4], [4,6]]
 
     N, K, H, W = pred_keypoint_logits.shape
+    print('N, K, H, W', N, K, H, W)
     keypoint_side_len = pred_keypoint_logits.shape[2]
 
 
@@ -274,6 +275,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('confirm shape after 2d integral ', pred_integral['pose_2d'].shape)
+    print('valid', valid)
     pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
 
