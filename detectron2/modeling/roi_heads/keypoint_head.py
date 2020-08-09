@@ -62,7 +62,7 @@ def build_keypoint_head(cfg, input_shape):
     name = cfg.MODEL.ROI_KEYPOINT_HEAD.NAME
     return ROI_KEYPOINT_HEAD_REGISTRY.get(name)(cfg, input_shape)
 
-def integral_2d_innovate(heatmap, rois):
+def integral_2d_innovate(heatmap_, rois):
     #print('2d Innovate being used')
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
     heatmap = heatmap_[:,0:6,:,:]
@@ -140,10 +140,11 @@ def integral_2d_innovate(heatmap, rois):
 
 def integral_3d_innovate(heatmap_):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
-    h, w = heatmap_.shape[2], heatmap_.shape[3]
-
+    
     # H Heatmap, X,Y,Z location maps
     heatmap = heatmap_[:,0:6,:,:]
+    h, w = heatmap.shape[2], heatmap.shape[3]
+
     location_map_X = heatmap_[:,6:12,:,:]
     location_map_Y = heatmap_[:,12:18,:,:]
     location_map_Z = heatmap_[:,18:24,:,:]
