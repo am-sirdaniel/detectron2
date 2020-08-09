@@ -276,7 +276,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('confirm shape after 2d integral ', pred_integral['pose_2d'].shape)
     print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
+    pred_integral_v1 = pred_integral['pose_2d'].view(N * 6, -1)[valid]
 
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
@@ -349,7 +349,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #print('reshape', pose3d_gt.view(-1,3).shape)
     #pose3d_gt = pose3d_gt.view(-1, 3) #[valid]
     #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
-    pred_3d_valid = pred_3d.view(N * K, -1)[valid]
+    pred_3d_valid = pred_3d.view(N * 6, -1)[valid]
 
 
     m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
