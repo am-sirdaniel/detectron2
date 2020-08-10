@@ -111,8 +111,8 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     memo: Set[torch.nn.parameter.Parameter] = set()
     for idx, module in enumerate(model.modules()):
         print(idx, '-->', module)
-        try:
-            module
+        #try:
+        #    module
         for key, value in module.named_parameters(recurse=False):
             #print('key: ',key)
             #print('value.requires_grad: ', value.requires_grad)
