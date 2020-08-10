@@ -112,8 +112,8 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     for module in model.modules():
         print('module', module)
         for key, value in module.named_parameters(recurse=False):
-            print('key: ',key)
-            print('value.requires_grad: ', value.requires_grad)
+            #print('key: ',key)
+            #print('value.requires_grad: ', value.requires_grad)
             if not value.requires_grad:
                 continue
             # Avoid duplicating parameters
