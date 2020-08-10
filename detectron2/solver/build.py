@@ -60,7 +60,7 @@ def _generate_optimizer_class_with_gradient_clipping(
 
 def maybe_add_gradient_clipping(
     cfg: CfgNode, optimizer: torch.optim.Optimizer
-) -> torch.optim.Optimizer:
+) -> torch.optim.Optimizer:            existing optimizer instance
     """
     If gradient clipping is enabled through config options, wraps the existing
     optimizer instance of some type OptimizerType to become an instance
@@ -109,8 +109,10 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     )
     params: List[Dict[str, Any]] = []
     memo: Set[torch.nn.parameter.Parameter] = set()
-    for module in model.modules():
-        print('module', module)
+    for idx, module in enumerate(model.modules()):
+        print(idx, '-->', module)
+#         try:
+#             module
         for key, value in module.named_parameters(recurse=False):
             #print('key: ',key)
             #print('value.requires_grad: ', value.requires_grad)
@@ -133,7 +135,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
                 weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
     
-    print('params', params)
+    #print('params', params)
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
     )
