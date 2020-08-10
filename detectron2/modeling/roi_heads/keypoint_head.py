@@ -62,10 +62,9 @@ def build_keypoint_head(cfg, input_shape):
     name = cfg.MODEL.ROI_KEYPOINT_HEAD.NAME
     return ROI_KEYPOINT_HEAD_REGISTRY.get(name)(cfg, input_shape)
 
-def integral_2d_innovate(heatmap_, rois):
+def integral_2d_innovate(heatmap, rois):
     #print('2d Innovate being used')
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) / (N, K, H, W) 
-    heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
     #print('origin logits bf heatmap', heatmap.shape)
 
@@ -100,19 +99,19 @@ def integral_2d_innovate(heatmap_, rois):
     # computing integral in relative global coordinates directly
 
     #print('rois in integral function ', rois)
-    # start_x = rois[:, 0]
-    # start_y = rois[:, 1]
+    start_x = rois[:, 0]
+    start_y = rois[:, 1]
 
-    # scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
-    # scale_y = 1 / (rois[:, 3] - rois[:, 1])
+    scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
+    scale_y = 1 / (rois[:, 3] - rois[:, 1])
 
-    # scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
-    # scale_inv_y = (rois[:, 3] - rois[:, 1])
+    scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
+    scale_inv_y = (rois[:, 3] - rois[:, 1])
 
     #DISCRETE FORM of integral is not expensive 
     #Our choice (0->1) ROI coordinates 
-    x_list = torch.linspace(-1,1, w).cuda()
-    y_list = torch.linspace(-1,1, h).cuda()
+    x_list = torch.linspace(0,1, w).cuda()
+    y_list = torch.linspace(0,1, h).cuda()
     # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
     i,j = torch.meshgrid(x_list, y_list)
 
@@ -122,9 +121,9 @@ def integral_2d_innovate(heatmap_, rois):
 
     # transforming back to global relative coords
     #print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
-    # print('i_ (before) as 0-1 coordinates', i_[0])
-    # i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
-    # j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
+    print('i_ (before) as 0-1 coordinates', i_[0])
+    i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
+    j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
 
     #Modified arrangement
     pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
@@ -138,31 +137,10 @@ def integral_2d_innovate(heatmap_, rois):
     #print('pose relative global coordinates', pose[0][0])
     return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
 
-def integral_3d_innovate(heatmap_):
-    #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
-    
-    # H Heatmap, X,Y,Z location maps
-    heatmap = heatmap_[:,0:6,:,:]
-    h, w = heatmap.shape[2], heatmap.shape[3]
+def effective_2d_3d(pose2D_normalized):
+	pred_pose3d = model2(pose2D_normalized.float())
 
-    location_map_X = heatmap_[:,6:12,:,:]
-    location_map_Y = heatmap_[:,12:18,:,:]
-    location_map_Z = heatmap_[:,18:24,:,:]
-
-     #implementing softmax ,#soving the numerical problem
-    heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) 
-    exp_heatmap = torch.exp(heatmap)
-    h_norm = exp_heatmap / torch.sum(exp_heatmap, dim = (-1,-2), keepdim = True)
-    
-    #all locations map in the domain, weighted by their probabilities.
-    i_ = torch.sum(location_map_X*h_norm, dim=(-1,-2))
-    j_ = torch.sum(location_map_Y*h_norm, dim=(-1,-2))
-    z_ = torch.sum(location_map_Z*h_norm, dim=(-1,-2))
-
-    pose3d  = torch.stack((i_,j_,z_),dim=2) #[[i,i,i,,],
-                                       #[j,j,j,,,]]
-
-    return ({'probabilitymap': h_norm, 'pose_3d': pose3d}) #(N,K,3)
+	return pred_pose3d
 
 
 def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
@@ -172,6 +150,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
             of instances in the batch, K is the number of keypoints, and S is the side length
             of the keypoint heatmap. The values are spatial logits.
             predicted keypoint heatmaps in `pred_keypoint_logits`
+
         instances (list[Instances]): A list of M Instances, where M is the batch size.
             These instances are predictions from the model
             that are in 1:1 correspondence with pred_keypoint_logits.
@@ -192,13 +171,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     bones_ego = [[1,2], [1,3],[3,5],[2,4], [4,6]]
 
     N, K, H, W = pred_keypoint_logits.shape
-    print('N, K, H, W', N, K, H, W)
     keypoint_side_len = pred_keypoint_logits.shape[2]
 
 
 
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    #print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
+    print('check for box rois: ', [b.proposal_boxes.tensor for b in instances])
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
@@ -209,8 +187,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
             continue
         keypoints = instances_per_image.gt_keypoints
         # if len(keypoints) ==0:
-        #   print('EMPTY KEYPOINTS, WHY?') 
-        #   continue
+        # 	print('EMPTY KEYPOINTS, WHY?') 
+        # 	continue
 
 
         #print('other fields:', instances_per_image.get_fields())
@@ -264,53 +242,32 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     #lets confirm equal total instances
     try:
-        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
     except:
-        print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
-        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+    	print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
+    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
 
     # if use_2d:
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('confirm shape after 2d integral ', pred_integral['pose_2d'].shape)
-    print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d'].view(N * 6, -1)[valid]
+    print('confirm shape after integral ', pred_integral['pose_2d'].shape)
+    pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
 
-
-    #normalize kps
-    
-    kp_mean = torch.Tensor([[942.8855, 326.6883],
-        [941.4666, 405.1611],
-        [740.3054, 304.9617],
-        [737.7035, 421.5804],
-        [530.7987, 290.6349],
-        [534.2322, 425.0898]]).cuda()
-
-    kp_std = torch.Tensor([[ 94.6912,  31.1105],
-        [ 96.2150,  31.2903],
-        [ 89.2333,  28.6181],
-        [ 89.7864,  32.5412],
-        [109.8567,  45.1855],
-        [ 92.0391,  33.6960]]).cuda()
-
-    #global mean-std normalization
-    kps = (kps - kp_mean)/kp_std
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
-    print('kps shape before removing invalid for 2d', kps.shape)
+    print('kps shape before removing invalid', kps.shape)
     kps = kps.view(s1*s2, -1)[valid]
-    print('kps removed invalid shape for 2d', kps.shape)
+    print('kps removed invalid shape', kps.shape)
 
 
-    print('example pred 2d: ', pred_integral_v1[-3:])
-    print('example kps 2d: ', kps[-3:])
+    print('example pred: ', pred_integral_v1[-3:])
+    print('example kps: ', kps[-3:])
     print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(pred_integral_v1))
     print('min and max of kps', torch.min(kps), torch.max(kps))
-
 
     pose2d_loss = torch.nn.functional.mse_loss(pred_integral_v1, kps, reduction = 'sum')
     print('original pose2d loss ', pose2d_loss)
@@ -321,93 +278,60 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     
     #
-    # my_normalizer= 720 + 1280 
-    # pose2d_loss /= my_normalizer
+    my_normalizer= 720 + 1280 
+    pose2d_loss /= my_normalizer
 
 
     ############################################################
 
-    #pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
-    #print('input to linear pred_integral', pred_integral_v2.shape)
-
-    pred_3d = integral_3d_innovate(pred_keypoint_logits)
-    print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape)
-    print('what pred pose3d looks like', pred_3d['pose_3d'][0])
-    pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
-    print('what GT pose3d looks like', pose3d_gt[0])
+    pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
+    print('input to linear pred_integral', pred_integral_v2.shape)
 
     ##Dont exclude any kps for 2nd model
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
-    # pred_3d = linermodel(pred_integral_v2)
-    # print('output shape from linear pred_integral', pred_3d.shape)
-    # print('what pred pose3d looks like', p3d[0])
-    # pose3d_gt = p3d.reshape(p3d.shape[0],-1)
-    # print('what GT pose3d looks like', pose3d_gt[0])
+    pred_3d = linermodel(pred_integral_v2)
+    print('output shape from linear pred_integral', pred_3d.shape)
+    print('what pred pose3d looks like', p3d[0])
+    pose3d_gt = p3d.reshape(p3d.shape[0],-1)
+    print('what GT pose3d looks like', pose3d_gt[0])
     
     
 
-    #print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
+    print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
-    #Normalize 3d GT by global mean-std
+  #   #Normalize 3d GT by mean-std
     mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
          -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
          1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
-    torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+ 	torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
          143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
          161.9945, 159.9102, 146.8468, 146.0199]).cuda())
-
-    #hip normalization first
-    #hip_mid = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
-    #pose3d_gt = pose3d_gt - hip_mid
 
     pose3d_gt = (pose3d_gt - mean_3d)/std_3d
     print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
-    #pred_3d = pred_3d.view(-1, 3) #[valid]
+    pred_3d = pred_3d.view(-1, 3) #[valid]
     #print('solving a bug: ', pose3d_gt.shape, type(pose3d_gt))
     #print('reshape', pose3d_gt.reshape(-1,3).shape, valid)
     #print('reshape', pose3d_gt.view(-1,3).shape)
-    #pose3d_gt = pose3d_gt.view(-1, 3) #[valid]
+    pose3d_gt = pose3d_gt.view(-1, 3) #[valid]
     #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
-    pred_3d_valid = pred_3d['pose_3d'].view(N * 6, -1)[valid]
-
-
-    pose3d_gt = pose3d_gt.reshape(pose3d_gt.shape[0], 6, 3)
-    m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
-    print('kps shape before removing invalid for 3d', pose3d_gt.shape)
-    pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
-    print('kps removed invalid shape for 3d', pose3d_gt.shape)
-
-
-    print('example pred 3d: ', pred_3d_valid[-3:])
-    print('example kps 3d: ', pose3d_gt[-3:])
-    print()
-    #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    print('min and max of pred_integral_v1', torch.min(pred_3d_valid), torch.max(pred_3d_valid))
-    print('min and max of kps', torch.min(pose3d_gt), torch.max(pose3d_gt))
-
-    pose3d_loss = torch.nn.functional.mse_loss(pred_3d_valid, pose3d_gt, reduction = 'sum')
-    print('original pose3d loss ', pose2d_loss)
-    if normalizer is None:
-        normalizer = valid.numel()
-    pose3d_loss /= normalizer
 
 
     #consider all valid
-    #pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
+    pose3d_loss = torch.nn.functional.mse_loss(pred_3d, pose3d_gt)
     # try:
-    #   print('pose3d_LOSS: ', pose3d_loss)
+    # 	print('pose3d_LOSS: ', pose3d_loss)
     # except:
-    #   print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
+    # 	print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
 
     ##############################################################
 
     comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30
 
-    print('normalizer amount: ', normalizer)
-    print('normalized 2d loss: ', pose2d_loss)
-    print('normalized 3d loss: ', pose3d_loss)
-    print('combined_loss:', comb_loss)
+    print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
+    print('pose3d_LOSS: ', pose3d_loss)
+    print('combined_loss: ', comb_loss)
     
     print()
     print()
@@ -434,7 +358,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #     # clear output window and diplay updated figure
     #     axes[2].plot(low_lossArray)
     #     axes[2].set_yscale('linear')
-    
+	
     #     display.clear_output(wait=True)
     #     #display.display(plt.gcf())
     #     plt.show()
@@ -476,33 +400,25 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
-    out1 = integral_2d_innovate(pred_keypoint_logits, pred_rois)
-    heatmap_norm = out1['probabilitymap']
-    print('2d heatmap_norm shape', heatmap_norm.shape)
-    print('2d hip heatmap_norm', heatmap_norm[0][0][0])
-    print('2d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
-    #scores for the ankle etc
-    scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    #unstack
-    i_, j_  = torch.unbind(out1['pose_2d'], dim=2)
-    #instance, K, 3) 3-> (x, y, score)
-    keypoint_results = torch.stack((i_,j_, scores),dim=2)
-
-    out2 = integral_3d_innovate(pred_keypoint_logits, pred_rois)
-    heatmap_norm = out2['probabilitymap']
-    print('3d heatmap_norm shape', heatmap_norm.shape)
-    print('3d hip heatmap_norm', heatmap_norm[0][0][0])
-    print('3d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
+    out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
+    heatmap_norm = out['probabilitymap']
+    print('heatmap_norm shape', heatmap_norm.shape)
+    print('hip heatmap_norm', heatmap_norm[0][0][0])
+    print('heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #print('scores: ', scores)
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
-    i_, j_,z_  = torch.unbind(out2['pose_3d'], dim=2)
+    i_, j_  = torch.unbind(out['pose_2d'], dim=2)
+
+    #de-normalize
+    #xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
+    #i_ = (i_ * (xmax - xmin)) + xmin
+    #j_ = (j_ * (ymax - ymin)) + ymin
+
     #instance, K, 3) 3-> (x, y, score)
-    pose3d_results = torch.stack((i_,j_, scores),dim=2)
-
-
+    keypoint_results = torch.stack((i_,j_, scores),dim=2)
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
@@ -519,11 +435,14 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
         print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
-
-
-        ### SOMETHING LIKE THIS FOR .PRED_3D ATTRIBUTE?
         instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
         
+    #instances_per_image.pred_keypoints = keypoint_results
+
+    # for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
+    #     # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
+    #     instances_per_image.pred_keypoints = keypoint_results_per_image
+
 
 ########################################################## MY CODE
 
@@ -754,4 +673,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
 
