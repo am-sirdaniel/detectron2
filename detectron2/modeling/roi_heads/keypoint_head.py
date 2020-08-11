@@ -122,12 +122,16 @@ def integral_2d_innovate(heatmap, rois):
     # transforming back to global relative coords
     #print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
     print('i_ (before) as 0-1 coordinates', i_[0])
-    i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
-    j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
+    i_g = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
+    j_g = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
 
     #Modified arrangement
-    pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+    pose_glob  = torch.stack((i_g,j_g),dim=2) #[[i,i,i,,], #(N,K, 2)
                                        #[j,j,j,,,]]
+
+    pose_norm = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+                                       #[j,j,j,,,]]
+
 
     print('checking, is I and J well placed as x,y?', pose[0][0:2])
     print('min and max of I ', torch.min(i_), torch.max(i_))
@@ -135,7 +139,7 @@ def integral_2d_innovate(heatmap, rois):
 
     #return relative global coordinates
     #print('pose relative global coordinates', pose[0][0])
-    return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
+    return ({'probabilitymap': h_norm, 'pose_2d global': pose_glob, 'pose_2d norm': pose_norm,}) #(N,K, 2)
 
 def effective_2d_3d(pose2D_normalized):
 	pred_pose3d = model2(pose2D_normalized.float())
@@ -252,8 +256,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('confirm shape after integral ', pred_integral['pose_2d'].shape)
-    pred_integral_v1 = pred_integral['pose_2d'].view(N * K, -1)[valid]
+    print('confirm shape after integral ', pred_integral['pose_2d global'].shape)
+    pred_integral_v1 = pred_integral['pose_2d global'].view(N * K, -1)[valid]
 
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
@@ -284,7 +288,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     ############################################################
 
-    pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
+    pred_integral_v2 = pred_integral['pose_2d global'].reshape(N, -1)
     print('input to linear pred_integral', pred_integral_v2.shape)
 
     ##Dont exclude any kps for 2nd model
@@ -420,7 +424,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #print("type of out['pose_2d']", type(out['pose_2d']))
     #unstack
-    i_, j_  = torch.unbind(out['pose_2d'], dim=2)
+    i_, j_  = torch.unbind(out['pose_2d norm'], dim=2)
     #de-normalize
     #xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
     #i_ = (i_ * (xmax - xmin)) + xmin
@@ -442,7 +446,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
 
     ###  3D   #####
 
-    input2d = out['pose_2d'].view(out['pose_2d'].shape[0],-1)
+    input2d = out['pose_2d global'].view(out['pose_2d global'].shape[0],-1)
     print('input 2d shape for testing', input2d.shape)
 
     # print('linearmodel.is_cuda ? ', next(linearmodel.parameters()).is_cuda)
@@ -455,14 +459,16 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
     print('min and max of out3d in testing', torch.min(pred_3d), torch.max(pred_3d))
+    pred_3d  = pred_3d[:, :].split(num_instances_per_image, dim=0)
 
-    for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
+    
+    for pred_3d_results_per_image, instances_per_image in zip(pred_3d, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
-        print('keypoint_results_per_image', keypoint_results_per_image.shape)
+        print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
         #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
-        instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
+        instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
         
     #instances_per_image.pred_keypoints = keypoint_results
 
