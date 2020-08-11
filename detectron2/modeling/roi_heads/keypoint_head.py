@@ -133,7 +133,7 @@ def integral_2d_innovate(heatmap, rois):
                                        #[j,j,j,,,]]
 
 
-    print('checking, is I and J well placed as x,y?', pose[0][0:2])
+    print('checking, is I and J well placed as x,y?', pose_glob[0][0:2])
     print('min and max of I ', torch.min(i_), torch.max(i_))
     print('min and max of J', torch.min(j_), torch.max(j_))
 
