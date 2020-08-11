@@ -425,7 +425,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     print('num_instances_per_image', num_instances_per_image)
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     print('what keypoint_results looks like as a tuple', keypoint_results)
-    print('pred keypoint_results after split', keypoint_results[0].shape)
+    #print('pred keypoint_results after split', keypoint_results[0].shape)
     try:
         print('pred keypoint_results after split', keypoint_results.tensor.shape)
         print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
