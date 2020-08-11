@@ -290,6 +290,13 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     ##Dont exclude any kps for 2nd model
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
     pred_3d = linearmodel(pred_integral_v2)
+
+    try:
+        pred_3d = linearmodel(pred_integral_v2)
+        print('Another linear model worked..No error')
+    except:
+        pass
+
     print('output shape from linear pred_integral', pred_3d.shape)
     print('what pred pose3d looks like', pred_3d[0])
     pose3d_gt = p3d.reshape(p3d.shape[0],-1)
@@ -425,7 +432,10 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     print('num_instances_per_image', num_instances_per_image)
-    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+
+    #torch.split work is to split the 1st dimension into chunks coupled inside a tuple
+    #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
     #print('what keypoint_results looks like as a tuple', keypoint_results)
     #print('pred keypoint_results after split', keypoint_results[0].shape)
 
@@ -433,17 +443,18 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     ###  3D   #####
 
     input2d = out['pose_2d'].view(out['pose_2d'].shape[0],-1)
-    #print('input 2d shape for testing', input2d.shape)
+    print('input 2d shape for testing', input2d.shape)
 
-    #print('linearmodel.is_cuda ? ', next(linearmodel.parameters()).is_cuda)
-    #print('input2d.is_cuda ? ', input2d.is_cuda)
+    # print('linearmodel.is_cuda ? ', next(linearmodel.parameters()).is_cuda)
+    # print('input2d.is_cuda ? ', input2d.is_cuda)
 
 
-    p#rint('type input2d', type(input2d))
+    #print('type input2d', type(input2d))
     #print('input2d',input2d)
-    #print('min and max of input2d', torch.min(input2d), torch.max(input2d))
+    print('min and max of input2d for testing', torch.min(input2d), torch.max(input2d))
     pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
+    print('min and max of out3d in testing', torch.min(pred_3d), torch.max(pred_3d))
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
