@@ -440,7 +440,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
 
 
     print('type input2d', type(input2d))
-    print('min and max of input2d', torch.min(input2d.item()), torch.max(input2d.item()))
+    print('input2d',input2d)
+    print('min and max of input2d', torch.min(input2d), torch.max(input2d))
     pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
 
