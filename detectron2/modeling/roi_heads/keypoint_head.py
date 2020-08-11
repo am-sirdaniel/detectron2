@@ -461,14 +461,17 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     print('min and max of out3d in testing', torch.min(pred_3d), torch.max(pred_3d))
     pred_3d  = pred_3d[:, :].split(num_instances_per_image, dim=0)
 
-    
-    for pred_3d_results_per_image, instances_per_image in zip(pred_3d, pred_instances):
+
+    for keypoint_results_per_image, pred_3d_results_per_image, instances_per_image in zip(keypoint_results, pred_3d, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
+        print('keypoint_results_per_image', keypoint_results_per_image.shape)
         print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
         #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
+        instances_per_image.pred_keypoints = keypoint_results_per_image
         instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
+
         
     #instances_per_image.pred_keypoints = keypoint_results
 
