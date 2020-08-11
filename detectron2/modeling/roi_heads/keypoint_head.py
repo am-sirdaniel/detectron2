@@ -564,7 +564,7 @@ class BaseKeypointRCNNHead(nn.Module):
         self.linearmodel = LinearModel()
         try:
             print('using torch.device("cuda")')
-            self.linearmodel.to(torch.device("cuda"))
+            self.linearmodel = self.linearmodel.to(torch.device("cuda"))
         except:
             print('using cuda directly')
             self.linearmodel = self.linearmodel.cuda()
