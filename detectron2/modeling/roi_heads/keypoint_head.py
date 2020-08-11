@@ -291,7 +291,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
     pred_3d = linearmodel(pred_integral_v2)
     print('output shape from linear pred_integral', pred_3d.shape)
-    print('what pred pose3d looks like', p3d[0])
+    print('what pred pose3d looks like', pred_3d[0])
     pose3d_gt = p3d.reshape(p3d.shape[0],-1)
     print('what GT pose3d looks like', pose3d_gt[0])
     
@@ -446,6 +446,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         pass
 
     print('type linearmodel', type(linearmodel))
+    print('min and max of input2d', torch.min(input2d), torch.max(input2d))
     pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
 
