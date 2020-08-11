@@ -433,15 +433,15 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     ###  3D   #####
 
     input2d = out['pose_2d'].view(out['pose_2d'].shape[0],-1)
-    print('input 2d shape for testing', input2d.shape)
+    #print('input 2d shape for testing', input2d.shape)
 
-    print('linearmodel.is_cuda ? ', next(linearmodel.parameters()).is_cuda)
-    print('input2d.is_cuda ? ', input2d.is_cuda)
+    #print('linearmodel.is_cuda ? ', next(linearmodel.parameters()).is_cuda)
+    #print('input2d.is_cuda ? ', input2d.is_cuda)
 
 
-    print('type input2d', type(input2d))
-    print('input2d',input2d)
-    print('min and max of input2d', torch.min(input2d), torch.max(input2d))
+    p#rint('type input2d', type(input2d))
+    #print('input2d',input2d)
+    #print('min and max of input2d', torch.min(input2d), torch.max(input2d))
     pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
 
