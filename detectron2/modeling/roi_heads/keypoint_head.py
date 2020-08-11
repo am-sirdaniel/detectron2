@@ -8,11 +8,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import numpy as np
-import custom_plotting
+from detectron2.modeling.roi_heads import custom_plotting 
 import matplotlib.pyplot as plt
 
 #import utils
-import plotting
+#import plotting
 #import triangulate 
 import numpy as np
 
