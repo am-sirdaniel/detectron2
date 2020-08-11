@@ -434,6 +434,18 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
 
     input2d = out['pose_2d'].view(out['pose_2d'].shape[0],-1)
     print('input 2d shape for testing', input2d.shape)
+
+    try:
+        print('linearmodel.is_cuda ? ', linearmodel.is_cuda)
+    except:
+        pass
+
+    try:
+        print('input2d.is_cuda ? ', input2d.is_cuda)
+    except:
+        pass
+
+    print('type linearmodel', type(linearmodel))
     pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
 
@@ -563,8 +575,8 @@ class BaseKeypointRCNNHead(nn.Module):
         self.loss_normalizer = loss_normalizer
         self.linearmodel = LinearModel()
         try:
-            print('using torch.device("cuda")')
-            self.linearmodel = self.linearmodel.to(torch.device("cuda"))
+            print('using torch.device("cuda:0")')
+            self.linearmodel = self.linearmodel.to(torch.device("cuda:0"))
         except:
             print('using cuda directly')
             self.linearmodel = self.linearmodel.cuda()
