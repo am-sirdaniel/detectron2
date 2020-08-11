@@ -116,9 +116,9 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
 #                 #Set 2nd architecture layers to False
 #                 value.requires_grad = False
                 
-            if 167 > idx > 184:
-                #Set 2nd architecture layers to False
-                value.requires_grad = False
+#             if 167 > idx > 184:
+#                 #Set 1st architecture layers to False
+#                 value.requires_grad = False
             
             print('idx', idx, 'key: ',key, 'value.requires_grad:', value.requires_grad)
             #print('value',value[0])
