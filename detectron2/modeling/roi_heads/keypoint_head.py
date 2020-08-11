@@ -563,11 +563,12 @@ class BaseKeypointRCNNHead(nn.Module):
         self.loss_normalizer = loss_normalizer
         self.linearmodel = LinearModel()
         try:
-            print('self.device', self.device)
-            self.linearmodel.to(self.device)
+            print('using torch.device("cuda")')
+            self.linearmodel.to(torch.device("cuda"))
         except:
             print('using cuda directly')
             self.linearmodel = self.linearmodel.cuda()
+        
         self.linearmodel.apply(weight_init)
         print(">>> total params: {:.2f}M".format(sum(p.numel() for p in self.linearmodel.parameters()) / 1000000.0))
         
