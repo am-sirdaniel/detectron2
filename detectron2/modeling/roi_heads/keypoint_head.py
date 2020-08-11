@@ -409,9 +409,9 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #print('scores: ', scores)
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
+    print("type of out['pose_2d']", type(out['pose_2d']))
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
-
     #de-normalize
     #xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
     #i_ = (i_ * (xmax - xmin)) + xmin
@@ -419,10 +419,12 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
+    print('type of keypoint_results', type(keypoint_results))
     print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     print('num_instances_per_image', num_instances_per_image)
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    print('pred keypoint_results after split', keypoint_results.shape)
     try:
         print('pred keypoint_results after split', keypoint_results.tensor.shape)
         print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
@@ -434,7 +436,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
+        #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results_per_image #.unsqueeze(0)
         
