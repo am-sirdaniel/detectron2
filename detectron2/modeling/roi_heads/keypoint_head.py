@@ -400,6 +400,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
+    ###  2D   #####
+
     out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out['probabilitymap']
     print('heatmap_norm shape', heatmap_norm.shape)
@@ -409,7 +411,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #print('scores: ', scores)
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
-    print("type of out['pose_2d']", type(out['pose_2d']))
+    #print("type of out['pose_2d']", type(out['pose_2d']))
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
     #de-normalize
@@ -419,19 +421,21 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
-    print('type of keypoint_results', type(keypoint_results))
+    #print('type of keypoint_results', type(keypoint_results))
     print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     print('num_instances_per_image', num_instances_per_image)
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    print('what keypoint_results looks like as a tuple', keypoint_results)
+    #print('what keypoint_results looks like as a tuple', keypoint_results)
     #print('pred keypoint_results after split', keypoint_results[0].shape)
-    try:
-        print('pred keypoint_results after split', keypoint_results.tensor.shape)
-        print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
-        print('pred_instances', len(pred_instances))
-    except:
-        pass
+
+
+    ###  3D   #####
+
+    input2d = out['pose_2d'].view(out['pose_2d'].shape[0],-1)
+    print('input 2d shape for testing', input2d.shape)
+    pred_3d = linermodel(input2d)
+    print('output 3d shape in testing', pred_3d.shape)
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
