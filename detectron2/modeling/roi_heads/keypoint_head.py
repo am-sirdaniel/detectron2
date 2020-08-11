@@ -331,7 +331,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
-    print('combined_loss: ', comb_loss)
+    #print('combined_loss: ', comb_loss)
     
     print()
     print()
@@ -367,7 +367,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     #     #display.display()
     #     #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
 
-    return comb_loss
+    return pose2d_loss
 
 
 def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
