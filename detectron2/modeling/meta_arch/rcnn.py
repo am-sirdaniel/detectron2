@@ -267,6 +267,7 @@ class ProposalNetwork(nn.Module):
         ):
             height = input_per_image.get("height", image_size[0])
             width = input_per_image.get("width", image_size[1])
+            results_per_image.set('pred_3d_pts')
             r = detector_postprocess(results_per_image, height, width)
             processed_results.append({"proposals": r})
         return processed_results
