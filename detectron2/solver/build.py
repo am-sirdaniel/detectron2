@@ -117,7 +117,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
                 value.requires_grad = False
             
             print('idx', idx, 'key: ',key, 'value.requires_grad:', value.requires_grad)
-            print('value',value[0][0])
+            print('value',value[0])
             
             if not value.requires_grad:
                 continue
