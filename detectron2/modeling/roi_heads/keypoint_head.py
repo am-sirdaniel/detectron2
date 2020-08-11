@@ -143,7 +143,7 @@ def effective_2d_3d(pose2D_normalized):
 	return pred_pose3d
 
 
-def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
+def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel):
     """
     Arguments:
         pred_keypoint_logits (Tensor): A tensor of shape (N, K, S, S) where N is the total number
@@ -289,7 +289,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
 
     ##Dont exclude any kps for 2nd model
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
-    pred_3d = linermodel(pred_integral_v2)
+    pred_3d = linearmodel(pred_integral_v2)
     print('output shape from linear pred_integral', pred_3d.shape)
     print('what pred pose3d looks like', p3d[0])
     pose3d_gt = p3d.reshape(p3d.shape[0],-1)
@@ -370,7 +370,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     return comb_loss
 
 
-def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
+def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     """
     Post process each predicted keypoint heatmap in `pred_keypoint_logits` into (x, y, score)
         and add it to the `pred_instances` as a `pred_keypoints` field.
@@ -434,7 +434,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     input2d = out['pose_2d'].view(out['pose_2d'].shape[0],-1)
     print('input 2d shape for testing', input2d.shape)
-    pred_3d = linermodel(input2d)
+    pred_3d = linearmodel(input2d)
     print('output 3d shape in testing', pred_3d.shape)
 
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
@@ -561,9 +561,9 @@ class BaseKeypointRCNNHead(nn.Module):
         self.loss_weight = loss_weight
         assert loss_normalizer == "visible" or isinstance(loss_normalizer, float), loss_normalizer
         self.loss_normalizer = loss_normalizer
-        self.linermodel = LinearModel()
-        self.linermodel.apply(weight_init)
-        print(">>> total params: {:.2f}M".format(sum(p.numel() for p in self.linermodel.parameters()) / 1000000.0))
+        self.linearmodel = LinearModel()
+        self.linearmodel.apply(weight_init)
+        print(">>> total params: {:.2f}M".format(sum(p.numel() for p in self.linearmodel.parameters()) / 1000000.0))
         
     @classmethod
     def from_config(cls, cfg, input_shape):
@@ -609,11 +609,11 @@ class BaseKeypointRCNNHead(nn.Module):
                 None if self.loss_normalizer == "visible" else num_images * self.loss_normalizer
             )
             return {
-                "loss_keypoint": keypoint_rcnn_loss(x, instances, normalizer=normalizer, linermodel=self.linermodel)
+                "loss_keypoint": keypoint_rcnn_loss(x, instances, normalizer=normalizer, linearmodel=self.linearmodel)
                 * self.loss_weight
             } #self.model2, self.optimizer2
         else:
-            keypoint_rcnn_inference(x, instances)
+            keypoint_rcnn_inference(x, instances, linearmodel=self.linearmodel)
             return instances
 
     def layers(self, x):
