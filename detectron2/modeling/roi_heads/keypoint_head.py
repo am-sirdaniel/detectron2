@@ -436,7 +436,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     print('input 2d shape for testing', input2d.shape)
 
     try:
-        print('linearmodel.is_cuda ? ', linearmodel.is_cuda)
+        print('linearmodel.is_cuda ? ', next(linearmodel.parameters()).is_cuda)
     except:
         pass
 
