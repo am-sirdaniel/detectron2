@@ -23,7 +23,7 @@ import pandas as pd
 #import torchvision.transforms as transforms
 #import h5py
 import os
-
+from IPython import display
 #import torch.nn.functional as nn
 
 
