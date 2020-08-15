@@ -172,7 +172,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     color_order_ego = [1, 3, 5, 7, 2, 4, 6,];
 
-    bones_ego = [[1,2], [1,3],[3,5],[2,4], [4,6]]
+    bones_ego = [[0,1], [0,2],[2,4],[1,3], [3,5]]
 
     N, K, H, W = pred_keypoint_logits.shape
     keypoint_side_len = pred_keypoint_logits.shape[2]
