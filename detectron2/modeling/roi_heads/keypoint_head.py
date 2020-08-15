@@ -343,8 +343,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     global _LOSSES
     _LOSSES.append(comb_loss)
-    storage = get_event_storage()       
-    storage.put_scalar("comb_loss", _LOSSES)
+    storage = get_event_storage()  
+    print('storage', storage)
+    #storage.p     
+    #storage.put_scalar("comb_loss", _LOSSES)
 
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
@@ -370,17 +372,17 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        try:
-            print('storage keys', storage.keys())
-        except:
-            print('storage', storage)
+        # try:
+        #     print('storage keys', storage.keys())
+        # except:
+        #     print('storage', storage)
 
-        losses = storage['comb_loss']
-        axes[1].plot(losses)
-        axes[1].set_yscale('log')
+        #losses = storage['comb_loss']
+        #axes[1].plot(losses)
+        #axes[1].set_yscale('log')
         # clear output window and diplay updated figure
-        axes[2].plot(low_lossArray)
-        axes[2].set_yscale('linear')
+        #axes[2].plot(low_lossArray)
+        #axes[2].set_yscale('linear')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
