@@ -35,6 +35,7 @@ from detectron2.utils.registry import Registry
 
 _TOTAL_SKIPPED = 0
 _TOTAL_SKIPPED_KPS = 0
+_LOSSES = []
 
 print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
 
@@ -340,6 +341,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30
 
+    global _LOSSES
+    _LOSSES.append(comb_loss)
+    storage = get_event_storage()       
+    storage.put_scalar("comb_loss", _LOSSES)
+
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
     print('combined_loss: ', comb_loss)
@@ -364,6 +370,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
+        try:
+            print('storage keys', storage.keys())
+        except:
+            print('storage', storage)
+
+        losses = storage['comb_loss']
         axes[1].plot(losses)
         axes[1].set_yscale('log')
         # clear output window and diplay updated figure
