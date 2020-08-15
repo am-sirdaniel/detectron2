@@ -118,6 +118,8 @@ def plot_3Dpose(ax, pose_3d, bones, radius=10, colormap='gist_rainbow', color_or
         else:
             colorIndex = (color_order[i] * cmap.N / float(maximum))
         color = cmap(int(colorIndex))
+        print('bone', bone)
+        print('XYZ shape', XYZ.shape)
         x,y,z,c = plot3Dcylinder(ax, XYZ[:,bone[0]], XYZ[:,bone[1]], radius=radius, color=color)
         bridge_vertices(xs,ys,zs,cs, x,y,z,c)
         #x,y,z,c = plot3Dsphere(ax, XYZ[:,bone[0]], radius=radius*1.2, color=color)
