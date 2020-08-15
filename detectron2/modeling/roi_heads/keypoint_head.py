@@ -369,6 +369,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axs.append(f.add_subplot(2,2,3, projection='3d'))
         axs.append(f.add_subplot(2,2,4, projection='3d'))
 
+        #un-normalize for display
+        pose3d_gt = (pose3d_gt * std_3d) + mean_3d
+        pred_3d = (pred_3d * std_3d) + mean_3d
+
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
