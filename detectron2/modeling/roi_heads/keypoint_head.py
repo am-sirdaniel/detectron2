@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+v#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import print_function
@@ -240,6 +240,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     print('GT pose2d shape', kps.shape)
     print('GT pose3d shape', p3d.shape)
 
+    keep_kps = kps
+
     print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
@@ -309,15 +311,34 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     
     
 
+    
+
+    #Normalize 3d GT by mean-std
+  #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
+  #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
+  #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
+ 	# torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+  #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
+  #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
+
+
+    #Normalize relative to the hip
+    pose3d_gt = pose3d_gt.view(pose3d_gt.shape(0), 6,3) #N,6,3
+    midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
+
+    pose3d_gt = pose3d_gt - midhip
+    pose3d_gt = pose3d_gt.view(pose3d_gt.shape(0), -1)
+
+
     print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
-  #   #Normalize 3d GT by mean-std
-    mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
-         -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
-         1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
- 	torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
-         143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
-         161.9945, 159.9102, 146.8468, 146.0199]).cuda())
+    #Normalize 3d GT by mean-std relative to the hip
+    mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
+        -1257.6155, -1297.9100, -1227.4360, -1220.5818, -1329.1154, -1301.5215,
+          797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920]).cuda(),
+    torch.Tensor([ 15.5230,  19.4742,  25.6194,  15.5230,  19.4742,  25.6194, 183.8460,
+        172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
+        160.7282, 160.8192, 163.5823, 152.6740]).cuda())
 
     pose3d_gt = (pose3d_gt - mean_3d)/std_3d
     print('normalized 3d pose GT sample: ', pose3d_gt[0])
@@ -359,7 +380,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     print()
 
     # # plot progress
-    if np.random.choice([0,1]):
+    # if np.random.choice([0,1]):
+    if 1:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
         axes=fig.subplots(1,3)
@@ -369,9 +391,17 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axs.append(f.add_subplot(2,2,3, projection='3d'))
         axs.append(f.add_subplot(2,2,4, projection='3d'))
 
-        #un-normalize for display
+        # plot the ground truth and the predicted pose on top of the image
+        #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
+        #axes[0].set_title('Input image with predicted 2D pose (solid) and GT 2D pose (dashed)')
+        
+
+        #un-normalize for display 3D
         pose3d_gt = (pose3d_gt * std_3d) + mean_3d
         pred_3d = (pred_3d * std_3d) + mean_3d
+
+        #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
