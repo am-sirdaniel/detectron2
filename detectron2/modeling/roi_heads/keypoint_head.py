@@ -326,8 +326,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
     midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
 
-    print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.shape)
-    pose3d_gt = pose3d_gt - midhip
+    print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.squeeze(1).shape)
+    pose3d_gt = pose3d_gt - midhip.squeeze(1)
     pose3d_gt = pose3d_gt.view(pose3d_gt.shape(0), -1)
 
 
@@ -765,8 +765,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
-
