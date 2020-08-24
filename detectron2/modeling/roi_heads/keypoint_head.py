@@ -328,7 +328,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.unsqueeze(1).shape)
     pose3d_gt = pose3d_gt - midhip.unsqueeze(1)
-    pose3d_gt = pose3d_gt.view(pose3d_gt.shape(0), -1)
+    pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], -1)
 
 
     print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
