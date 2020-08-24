@@ -323,7 +323,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
 
     #Normalize relative to the hip
-    pose3d_gt = pose3d_gt.view(pose3d_gt.shape(0), 6,3) #N,6,3
+    pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
     midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
 
     pose3d_gt = pose3d_gt - midhip
