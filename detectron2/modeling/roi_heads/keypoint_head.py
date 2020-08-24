@@ -384,7 +384,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # # plot progress
     # if np.random.choice([0,1]):
-    if 1:
+    if torch.sum(np.isnan(pose3d_gt)) == 0 :
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
         axes=fig.subplots(1,3)
@@ -409,17 +409,6 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        # try:
-        #     print('storage keys', storage.keys())
-        # except:
-        #     print('storage', storage)
-
-        #losses = storage['comb_loss']
-        #axes[1].plot(losses)
-        #axes[1].set_yscale('log')
-        # clear output window and diplay updated figure
-        #axes[2].plot(low_lossArray)
-        #axes[2].set_yscale('linear')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
