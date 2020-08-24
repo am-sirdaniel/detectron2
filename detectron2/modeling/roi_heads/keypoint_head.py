@@ -384,7 +384,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # # plot progress
     # if np.random.choice([0,1]):
-    if torch.sum(np.isnan(pose3d_gt)) == 0 :
+    if torch.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
         axes=fig.subplots(1,3)
