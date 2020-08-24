@@ -110,7 +110,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     params: List[Dict[str, Any]] = []
     memo: Set[torch.nn.parameter.Parameter] = set()
     for idx, module in enumerate(model.modules()):
-        print(idx, '-->', module)
+        #print(idx, '-->', module)
         for key, value in module.named_parameters(recurse=False):
 #             if 167 <= idx <= 184:
 #                 #Set 2nd architecture layers to False
