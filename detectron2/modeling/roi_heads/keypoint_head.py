@@ -396,7 +396,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
         # plot the ground truth and the predicted pose on top of the image
         #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
-        #axes[0].set_title('Input image with predicted 2D pose (solid) and GT 2D pose (dashed)')
+        #axes[1].set_title('Input image with predicted 2D pose (solid) and GT 2D pose (dashed)')
         
 
         #un-normalize for display 3D
@@ -409,8 +409,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        axes[1].plot(_LOSSES)
-        axes[1].set_yscale('log')
+        axes[0].plot(_LOSSES)
+        axes[0].set_yscale('log')
         # clear output window and diplay updated figure
         #axes[2].plot(low_lossArray)
         #axes[2].set_yscale('linear')
@@ -516,6 +516,9 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         #print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results_per_image
         instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
+
+    #clear display output
+    display.clear_output(wait=True)
 
         
     #instances_per_image.pred_keypoints = keypoint_results
