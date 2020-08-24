@@ -409,6 +409,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
+        axes[1].plot(_LOSSES)
+        axes[1].set_yscale('log')
+        # clear output window and diplay updated figure
+        #axes[2].plot(low_lossArray)
+        #axes[2].set_yscale('linear')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
