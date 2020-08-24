@@ -351,9 +351,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     pose3d_gt_star = pose3d_gt.view(-1, 3) #[valid]
     #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
 
+    #wxclude nans from GT pose3d
+    all_nan = torch.isnan(pose3d_gt_star)
 
     #consider all valid
-    pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star, pose3d_gt_star)
+    pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
     # try:
     # 	print('pose3d_LOSS: ', pose3d_loss)
     # except:
