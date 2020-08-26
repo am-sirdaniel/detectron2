@@ -387,7 +387,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,3)
+        axes=fig.subplots(1,2)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
@@ -469,7 +469,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #print("type of out['pose_2d']", type(out['pose_2d']))
     #unstack
-    i_, j_  = torch.unbind(out['pose_2d norm'], dim=2)
+    i_, j_  = torch.unbind(out['pose_2d global'], dim=2)
     #de-normalize
     #xmax, xmin, ymax, ymin = 1236.8367, 0.0, 619.60706, 8.637619
     #i_ = (i_ * (xmax - xmin)) + xmin
@@ -764,4 +764,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
 
