@@ -383,7 +383,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     print()
 
     # # plot progress
-    # if np.random.choice([0,1]):
+    #only display if pose 3d GT has no nans 
     if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
@@ -764,8 +764,4 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
 
