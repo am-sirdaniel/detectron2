@@ -547,7 +547,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         print('Remember to divide the final _PCK_SCORE by the total no val/test images', _PCK_SCORE)
 
     #clear display output
-    display.clear_output(wait=True)
+    #display.clear_output(wait=True)
 
         
     #instances_per_image.pred_keypoints = keypoint_results
@@ -793,8 +793,4 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
 
