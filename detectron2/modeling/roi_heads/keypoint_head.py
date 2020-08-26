@@ -36,6 +36,7 @@ from detectron2.utils.registry import Registry
 _TOTAL_SKIPPED = 0
 _TOTAL_SKIPPED_KPS = 0
 _LOSSES = []
+_PCK_SCORE = 0
 
 print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
 
@@ -143,9 +144,9 @@ def integral_2d_innovate(heatmap, rois):
     return ({'probabilitymap': h_norm, 'pose_2d global': pose_glob, 'pose_2d norm': pose_norm,}) #(N,K, 2)
 
 def effective_2d_3d(pose2D_normalized):
-	pred_pose3d = model2(pose2D_normalized.float())
+    pred_pose3d = model2(pose2D_normalized.float())
 
-	return pred_pose3d
+    return pred_pose3d
 
 
 def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel):
@@ -192,8 +193,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
             continue
         keypoints = instances_per_image.gt_keypoints
         # if len(keypoints) ==0:
-        # 	print('EMPTY KEYPOINTS, WHY?') 
-        # 	continue
+        #   print('EMPTY KEYPOINTS, WHY?') 
+        #   continue
 
 
         #print('other fields:', instances_per_image.get_fields())
@@ -249,10 +250,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     #lets confirm equal total instances
     try:
-    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
     except:
-    	print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
-    	assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+        print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
+        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
 
     # if use_2d:
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
@@ -317,7 +318,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
   #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
   #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
   #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
- 	# torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
+    # torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
   #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
   #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
 
@@ -357,9 +358,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #consider all valid
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
     # try:
-    # 	print('pose3d_LOSS: ', pose3d_loss)
+    #   print('pose3d_LOSS: ', pose3d_loss)
     # except:
-    # 	print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
+    #   print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
 
     ##############################################################
 
@@ -384,7 +385,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # # plot progress
     #only display if pose 3d GT has no nans 
-    if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
+    #if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
+    if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
         axes=fig.subplots(1,2)
@@ -424,6 +426,20 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
 
     return comb_loss
+
+
+def pck(target, pred, treshold=0.1):
+    '''
+    Percentage of Correct Keypoint for 3D pose Evaluation where PCKh @ 0.1m (10cm)
+
+    Arguments:
+    target: A tensor of shape (1, 18)
+    pred: A tensor of shape (1, 18)
+    '''
+    diff = torch.abs(target - pred)
+    count = torch.sum(diff < treshold, dtype=torch.float)
+    return count/target.shape[1]
+
 
 
 def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
@@ -516,6 +532,19 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         #print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results_per_image
         instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
+
+
+        ###### pose 3d evaluation ####### Coco handles pose 2d evaluation
+        pose3d_pts = instances_per_image.gt_pose3d.cuda()
+        pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],18)
+
+        print('pose3d_pts evaluation shape', pose3d_pts.shape)
+        print('pred_3d evaluation shape', pred_3d_results_per_image.shape)
+
+        global _PCK_SCORE
+        pose3d_score = pck(pose3d_pts, pred_3d_results_per_image)
+        _PCK_SCORE += pose3d_score
+        print('Remember to divide the final _PCK_SCORE by the total no val/test images', _PCK_SCORE)
 
     #clear display output
     display.clear_output(wait=True)
