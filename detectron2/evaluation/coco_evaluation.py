@@ -25,6 +25,7 @@ from detectron2.utils.logger import create_small_table
 
 from .evaluator import DatasetEvaluator
 
+print('***************USING coco_evaluation Script*****************')
 
 class COCOEvaluator(DatasetEvaluator):
     """
@@ -111,6 +112,7 @@ class COCOEvaluator(DatasetEvaluator):
             outputs: the outputs of a COCO model. It is a list of dicts with key
                 "instances" that contains :class:`Instances`.
         """
+        print('***************USING process Method*****************')
         for input, output in zip(inputs, outputs):
             prediction = {"image_id": input["image_id"]}
 
@@ -123,6 +125,7 @@ class COCOEvaluator(DatasetEvaluator):
             self._predictions.append(prediction)
 
     def evaluate(self):
+        print('***************USING evaluate Method*****************')
         if self._distributed:
             comm.synchronize()
             predictions = comm.gather(self._predictions, dst=0)
@@ -156,6 +159,8 @@ class COCOEvaluator(DatasetEvaluator):
         Evaluate predictions on the given tasks.
         Fill self._results with the metrics of the tasks.
         """
+        print('***************USING _eval_predictions Method*****************')
+        
         self._logger.info("Preparing results for COCO format ...")
         coco_results = list(itertools.chain(*[x["instances"] for x in predictions]))
         print('coco_results sample', coco_results[0:5])
@@ -323,6 +328,7 @@ def instances_to_coco_json(instances, img_id):
     Returns:
         list[dict]: list of json annotations in COCO format.
     """
+    print('***************USING instances_to_coco_json Method*****************')
     num_instance = len(instances)
     if num_instance == 0:
         return []
