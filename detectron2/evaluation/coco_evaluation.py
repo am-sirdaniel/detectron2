@@ -13,13 +13,12 @@ import pycocotools.mask as mask_util
 import torch
 from fvcore.common.file_io import PathManager
 from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
 from tabulate import tabulate
 
 import detectron2.utils.comm as comm
 from detectron2.data import MetadataCatalog
 from detectron2.data.datasets.coco import convert_to_coco_json
-from detectron2.evaluation.fast_eval_api import COCOeval_opt
+from detectron2.evaluation.fast_eval_api import COCOeval_opt as COCOeval
 from detectron2.structures import Boxes, BoxMode, pairwise_iou
 from detectron2.utils.logger import create_small_table
 
@@ -36,7 +35,7 @@ class COCOEvaluator(DatasetEvaluator):
     instance segmentation, or keypoint detection dataset.
     """
 
-    def __init__(self, dataset_name, cfg, distributed, output_dir=None, *, use_fast_impl=True):
+    def __init__(self, dataset_name, cfg, distributed, output_dir=None):
         """
         Args:
             dataset_name (str): name of the dataset to be evaluated.
@@ -47,22 +46,17 @@ class COCOEvaluator(DatasetEvaluator):
             cfg (CfgNode): config instance
             distributed (True): if True, will collect results from all ranks and run evaluation
                 in the main process.
-                Otherwise, will only evaluate the results in the current process.
+                Otherwise, will evaluate the results in the current process.
             output_dir (str): optional, an output directory to dump all
                 results predicted on the dataset. The dump contains two files:
                 1. "instance_predictions.pth" a file in torch serialization
                    format that contains all the raw original predictions.
                 2. "coco_instances_results.json" a json file in COCO's result
                    format.
-            use_fast_impl (bool): use a fast but **unofficial** implementation to compute AP.
-                Although the results should be very close to the official implementation in COCO
-                API, it is still recommended to compute results with the official API for use in
-                papers.
         """
         self._tasks = self._tasks_from_config(cfg)
         self._distributed = distributed
         self._output_dir = output_dir
-        self._use_fast_impl = use_fast_impl
 
         self._cpu_device = torch.device("cpu")
         self._logger = logging.getLogger(__name__)
@@ -158,7 +152,6 @@ class COCOEvaluator(DatasetEvaluator):
         """
         self._logger.info("Preparing results for COCO format ...")
         coco_results = list(itertools.chain(*[x["instances"] for x in predictions]))
-        print('coco_results sample', coco_results[0:5])
 
         # unmap the category ids for COCO
         if hasattr(self._metadata, "thing_dataset_id_to_contiguous_id"):
@@ -185,19 +178,11 @@ class COCOEvaluator(DatasetEvaluator):
             self._logger.info("Annotations are not available for evaluation.")
             return
 
-        self._logger.info(
-            "Evaluating predictions with {} COCO API...".format(
-                "unofficial" if self._use_fast_impl else "official"
-            )
-        )
+        self._logger.info("Evaluating predictions ...")
         for task in sorted(tasks):
             coco_eval = (
                 _evaluate_predictions_on_coco(
-                    self._coco_api,
-                    coco_results,
-                    task,
-                    kpt_oks_sigmas=self._kpt_oks_sigmas,
-                    use_fast_impl=self._use_fast_impl,
+                    self._coco_api, coco_results, task, kpt_oks_sigmas=self._kpt_oks_sigmas
                 )
                 if len(coco_results) > 0
                 else None  # cocoapi does not handle empty results very well
@@ -297,7 +282,7 @@ class COCOEvaluator(DatasetEvaluator):
             ap = np.mean(precision) if precision.size else float("nan")
             results_per_category.append(("{}".format(name), float(ap * 100)))
 
-        # tabulate it - TABULATION IN RESULTS
+        # tabulate it
         N_COLS = min(6, len(results_per_category) * 2)
         results_flatten = list(itertools.chain(*results_per_category))
         results_2d = itertools.zip_longest(*[results_flatten[i::N_COLS] for i in range(N_COLS)])
@@ -487,9 +472,7 @@ def _evaluate_box_proposals(dataset_predictions, coco_api, thresholds=None, area
     }
 
 
-def _evaluate_predictions_on_coco(
-    coco_gt, coco_results, iou_type, kpt_oks_sigmas=None, use_fast_impl=True
-):
+def _evaluate_predictions_on_coco(coco_gt, coco_results, iou_type, kpt_oks_sigmas=None):
     """
     Evaluate the coco results using COCOEval API.
     """
@@ -505,7 +488,7 @@ def _evaluate_predictions_on_coco(
             c.pop("bbox", None)
 
     coco_dt = coco_gt.loadRes(coco_results)
-    coco_eval = (COCOeval_opt if use_fast_impl else COCOeval)(coco_gt, coco_dt, iou_type)
+    coco_eval = COCOeval(coco_gt, coco_dt, iou_type)
 
     if iou_type == "keypoints":
         # Use the COCO default keypoint OKS sigmas unless overrides are specified
@@ -514,11 +497,6 @@ def _evaluate_predictions_on_coco(
             coco_eval.params.kpt_oks_sigmas = np.array(kpt_oks_sigmas)
         # COCOAPI requires every detection and every gt to have keypoints, so
         # we just take the first entry from both
-
-        print('coco_results[0]', coco_results[0])
-        print('next(iter(coco_gt.anns.values()))["keypoints"]', next(iter(coco_gt.anns.values()))["keypoints"])
-
-        
         num_keypoints_dt = len(coco_results[0]["keypoints"]) // 3
         num_keypoints_gt = len(next(iter(coco_gt.anns.values()))["keypoints"]) // 3
         num_keypoints_oks = len(coco_eval.params.kpt_oks_sigmas)
