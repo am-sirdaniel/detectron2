@@ -512,6 +512,7 @@ def _evaluate_predictions_on_coco(
 
     coco_dt = coco_gt.loadRes(coco_results)
     coco_eval = (COCOeval_opt if use_fast_impl else COCOeval)(coco_gt, coco_dt, iou_type)
+    print('***************USING {} implementation*****************'.format(('Unofficial COCOeval_opt' if use_fast_impl else 'Official COCOeval')))
 
     if iou_type == "keypoints":
         # Use the COCO default keypoint OKS sigmas unless overrides are specified
