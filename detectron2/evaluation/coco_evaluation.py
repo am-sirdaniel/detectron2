@@ -25,7 +25,7 @@ from detectron2.utils.logger import create_small_table
 
 from .evaluator import DatasetEvaluator
 
-print('***************USING coco_evaluation Script*****************')
+print('***************USING coco_evaluation Script *****************')
 
 class COCOEvaluator(DatasetEvaluator):
     """
@@ -104,6 +104,7 @@ class COCOEvaluator(DatasetEvaluator):
         return tasks
 
     def process(self, inputs, outputs):
+        print('***************USING process Method *****************')
         """
         Args:
             inputs: the inputs to a COCO model (e.g., GeneralizedRCNN).
@@ -112,7 +113,6 @@ class COCOEvaluator(DatasetEvaluator):
             outputs: the outputs of a COCO model. It is a list of dicts with key
                 "instances" that contains :class:`Instances`.
         """
-        print('***************USING process Method*****************')
         for input, output in zip(inputs, outputs):
             prediction = {"image_id": input["image_id"]}
 
@@ -125,7 +125,7 @@ class COCOEvaluator(DatasetEvaluator):
             self._predictions.append(prediction)
 
     def evaluate(self):
-        print('***************USING evaluate Method*****************')
+        print('***************USING evaluate Method *****************')
         if self._distributed:
             comm.synchronize()
             predictions = comm.gather(self._predictions, dst=0)
@@ -155,12 +155,11 @@ class COCOEvaluator(DatasetEvaluator):
         return copy.deepcopy(self._results)
 
     def _eval_predictions(self, tasks, predictions):
+        print('***************USING _eval_predictions Method *****************')
         """
         Evaluate predictions on the given tasks.
         Fill self._results with the metrics of the tasks.
         """
-        print('***************USING _eval_predictions Method*****************')
-        
         self._logger.info("Preparing results for COCO format ...")
         coco_results = list(itertools.chain(*[x["instances"] for x in predictions]))
         print('coco_results sample', coco_results[0:5])
@@ -320,6 +319,7 @@ class COCOEvaluator(DatasetEvaluator):
 
 
 def instances_to_coco_json(instances, img_id):
+    print('***************USING instances_to_coco_json *****************')
     """
     Dump an "Instances" object to a COCO-format json that's used for evaluation.
     Args:
@@ -328,7 +328,6 @@ def instances_to_coco_json(instances, img_id):
     Returns:
         list[dict]: list of json annotations in COCO format.
     """
-    print('***************USING instances_to_coco_json Method*****************')
     num_instance = len(instances)
     if num_instance == 0:
         return []
@@ -355,8 +354,14 @@ def instances_to_coco_json(instances, img_id):
             rle["counts"] = rle["counts"].decode("utf-8")
 
     has_keypoints = instances.has("pred_keypoints")
+    has_3d_pts = instances.has("pred_3d_pts")
+    
     if has_keypoints:
         keypoints = instances.pred_keypoints
+
+    if has_3d_pts:
+        print('YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSS. Found pred_3d_pts')
+        pred_3d_pts = instances.pred_keypoints
 
     results = []
     for k in range(num_instance):
@@ -376,6 +381,10 @@ def instances_to_coco_json(instances, img_id):
             # This is the inverse of data loading logic in `datasets/coco.py`.
             keypoints[k][:, :2] -= 0.5
             result["keypoints"] = keypoints[k].flatten().tolist()
+
+        if has_3d_pts:
+            result["pred_3d_pts"] = pred_3d_pts[k].flatten().tolist()
+
         results.append(result)
     return results
 
@@ -496,6 +505,7 @@ def _evaluate_box_proposals(dataset_predictions, coco_api, thresholds=None, area
 def _evaluate_predictions_on_coco(
     coco_gt, coco_results, iou_type, kpt_oks_sigmas=None, use_fast_impl=True
 ):
+   print('***************USING _evaluate_predictions_on_coco Method *****************')
     """
     Evaluate the coco results using COCOEval API.
     """
@@ -512,7 +522,7 @@ def _evaluate_predictions_on_coco(
 
     coco_dt = coco_gt.loadRes(coco_results)
     coco_eval = (COCOeval_opt if use_fast_impl else COCOeval)(coco_gt, coco_dt, iou_type)
-    print('***************USING {} implementation*****************'.format(('Unofficial COCOeval_opt' if use_fast_impl else 'Official COCOeval')))
+    print('***************USING {} Method*****************'.format(('Unofficial COCOeval_opt' if use_fast_impl else 'Official COCOeval')))
 
     if iou_type == "keypoints":
         # Use the COCO default keypoint OKS sigmas unless overrides are specified
@@ -525,7 +535,7 @@ def _evaluate_predictions_on_coco(
         print('coco_results[0]', coco_results[0])
         print('next(iter(coco_gt.anns.values()))["keypoints"]', next(iter(coco_gt.anns.values()))["keypoints"])
 
-        
+
         num_keypoints_dt = len(coco_results[0]["keypoints"]) // 3
         num_keypoints_gt = len(next(iter(coco_gt.anns.values()))["keypoints"]) // 3
         num_keypoints_oks = len(coco_eval.params.kpt_oks_sigmas)
