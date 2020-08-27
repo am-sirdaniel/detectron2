@@ -535,16 +535,16 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
 
 
         ###### pose 3d evaluation ####### Coco handles pose 2d evaluation
-        pose3d_pts = instances_per_image.gt_pose3d.cuda()
-        pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],18)
+        # pose3d_pts = instances_per_image.gt_pose3d.cuda()
+        # pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],18)
 
-        print('pose3d_pts evaluation shape', pose3d_pts.shape)
-        print('pred_3d evaluation shape', pred_3d_results_per_image.shape)
+        # print('pose3d_pts evaluation shape', pose3d_pts.shape)
+        # print('pred_3d evaluation shape', pred_3d_results_per_image.shape)
 
-        global _PCK_SCORE
-        pose3d_score = pck(pose3d_pts, pred_3d_results_per_image)
-        _PCK_SCORE += pose3d_score
-        print('Remember to divide the final _PCK_SCORE by the total no val/test images', _PCK_SCORE)
+        # global _PCK_SCORE
+        # pose3d_score = pck(pose3d_pts, pred_3d_results_per_image)
+        # _PCK_SCORE += pose3d_score
+        # print('Remember to divide the final _PCK_SCORE by the total no val/test images', _PCK_SCORE)
 
     #clear display output
     #display.clear_output(wait=True)
@@ -793,4 +793,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
 
