@@ -24,6 +24,7 @@ from detectron2.structures import Boxes, BoxMode, pairwise_iou
 from detectron2.utils.logger import create_small_table
 
 from .evaluator import DatasetEvaluator
+#from detectron2.evaluation.evaluator import DatasetEvaluator
 
 print('***************USING coco_evaluation Script *****************')
 
@@ -123,6 +124,9 @@ class COCOEvaluator(DatasetEvaluator):
             if "proposals" in output:
                 prediction["proposals"] = output["proposals"].to(self._cpu_device)
             self._predictions.append(prediction)
+
+
+            print ('can we get list of all methods in this class', dir(self))
 
     def evaluate(self):
         print('***************USING evaluate Method *****************')
@@ -302,6 +306,7 @@ class COCOEvaluator(DatasetEvaluator):
             results_per_category.append(("{}".format(name), float(ap * 100)))
 
         # tabulate it - TABULATION IN RESULTS
+        print('**************TABULATION IN RESULTS *****************')
         N_COLS = min(6, len(results_per_category) * 2)
         results_flatten = list(itertools.chain(*results_per_category))
         results_2d = itertools.zip_longest(*[results_flatten[i::N_COLS] for i in range(N_COLS)])
@@ -504,7 +509,8 @@ def _evaluate_box_proposals(dataset_predictions, coco_api, thresholds=None, area
 
 def _evaluate_predictions_on_coco(
     coco_gt, coco_results, iou_type, kpt_oks_sigmas=None, use_fast_impl=True
-):   
+):
+   
     """
     Evaluate the coco results using COCOEval API.
     """
