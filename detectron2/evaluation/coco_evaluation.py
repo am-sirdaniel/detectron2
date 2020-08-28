@@ -539,7 +539,7 @@ def _evaluate_predictions_on_coco(
             # we just take the first entry from both
 
         print('coco_results shape', coco_results.shape)
-        print('coco_results[0]['pred_3d_pts']', coco_results[0]['pred_3d_pts'])# Not Right ?
+        print("coco_results[0]['pred_3d_pts']", coco_results[0]['pred_3d_pts'])# Not Right ?
         #print('next(iter(coco_gt)', coco_gt) 'an object'
 
         pose_3d_gt = next(iter(coco_gt.anns.values()))['pose_3d'] #correct values 3,6
