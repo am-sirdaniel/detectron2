@@ -38,7 +38,7 @@ class COCOEvaluator(DatasetEvaluator):
     instance segmentation, or keypoint detection dataset.
     """
 
-    def __init__(self, dataset_name, cfg, distributed, output_dir=None, *, use_fast_impl=True):
+    def __init__(self, dataset_name, cfg, distributed, output_dir=None, *, use_fast_impl=False):
         """
         Args:
             dataset_name (str): name of the dataset to be evaluated.
