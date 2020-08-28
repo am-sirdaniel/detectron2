@@ -21,6 +21,8 @@ class COCOeval_opt(COCOeval):
         self.evalImgs because this datastructure is a computational bottleneck.
         :return: None
         """
+        print('***************USING evaluate Method from fast_eval_api*****************')
+
         tic = time.time()
 
         print("Running per image evaluation...")
@@ -71,6 +73,7 @@ class COCOeval_opt(COCOeval):
         
 
         #### Dan #######
+        print('***************Running Dan Sample Instances*****************')
         sample_ground_truth_instances = [
             [self._gts[imgId, catId] for catId in p.catIds]
             for imgId in p.imgIds
