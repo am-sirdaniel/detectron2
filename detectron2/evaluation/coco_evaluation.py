@@ -539,7 +539,8 @@ def _evaluate_predictions_on_coco(
         # we just take the first entry from both
 
         print('coco_results[0]', coco_results[0]['pred_3d_pts'])
-        print('next(iter(coco_gt.anns.values()))["pred_3d_pts"]', next(iter(coco_gt.anns.values()))["pred_3d_pts"])
+        print('next(iter(coco_gt)', next(iter(coco_gt)))
+        print('next(iter(coco_gt.anns.values()))', next(iter(coco_gt.anns.values())))
 
 
         num_keypoints_dt = len(coco_results[0]["keypoints"]) // 3
