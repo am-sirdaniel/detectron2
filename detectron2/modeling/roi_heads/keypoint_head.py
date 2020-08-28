@@ -23,7 +23,8 @@ from detectron2.evaluation.fast_eval_api import COCOeval_opt
 from detectron2.structures import Boxes, BoxMode, pairwise_iou
 from detectron2.utils.logger import create_small_table
 
-from .evaluator import DatasetEvaluator
+#from .evaluator import DatasetEvaluator
+from detectron2.evaluation.evaluator import DatasetEvaluator
 
 print('***************USING coco_evaluation Script *****************')
 
