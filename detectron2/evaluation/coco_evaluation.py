@@ -266,7 +266,8 @@ class COCOEvaluator(DatasetEvaluator):
         Returns:
             a dict of {metric name: score}
         """
-
+        print('***************USING _derive_coco_results Method *****************')
+        
         metrics = {
             "bbox": ["AP", "AP50", "AP75", "APs", "APm", "APl"],
             "segm": ["AP", "AP50", "AP75", "APs", "APm", "APl"],
@@ -562,7 +563,7 @@ def _evaluate_predictions_on_coco(
             172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
             160.7282, 160.8192, 163.5823, 152.6740]))
 
-        pose3d_gt = (pose_3d_gt - mean_3d)/std_3d
+        pose_3d_gt = (pose_3d_gt - mean_3d)/std_3d
         print('normalized 3d pose GT sample: ', pose_3d_gt)
 
 
