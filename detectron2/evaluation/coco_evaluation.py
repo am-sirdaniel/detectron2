@@ -508,7 +508,7 @@ def _evaluate_box_proposals(dataset_predictions, coco_api, thresholds=None, area
 
 
 def _evaluate_predictions_on_coco(
-    coco_gt, coco_results, iou_type, kpt_oks_sigmas=None, use_fast_impl=True
+    coco_gt, coco_results, iou_type, kpt_oks_sigmas=None, use_fast_impl=False
 ):
    
     """
