@@ -535,12 +535,28 @@ def _evaluate_predictions_on_coco(
         if kpt_oks_sigmas:
             assert hasattr(coco_eval.params, "kpt_oks_sigmas"), "pycocotools is too old!"
             coco_eval.params.kpt_oks_sigmas = np.array(kpt_oks_sigmas)
-        # COCOAPI requires every detection and every gt to have keypoints, so
-        # we just take the first entry from both
+            # COCOAPI requires every detection and every gt to have keypoints, so
+            # we just take the first entry from both
 
-        print('coco_results[0]', coco_results[0]['pred_3d_pts'])
-        print('next(iter(coco_gt)', coco_gt)
-        print('next(iter(coco_gt.anns.values()))', next(iter(coco_gt.anns.values())))
+        print('coco_results shape', coco_results.shape)
+        print('coco_results[0]['pred_3d_pts']', coco_results[0]['pred_3d_pts'])# Not Right ?
+        #print('next(iter(coco_gt)', coco_gt) 'an object'
+
+        pose_3d_gt = next(iter(coco_gt.anns.values()))['pose_3d'] #correct values 3,6
+        pose_3d_gt = torch.Tensor(pose_3d_gt).view(-1) #[18]
+        print('next(iter(coco_gt.anns.values()))', pose_3d_gt) #[18]
+
+
+        #Normalize 3d GT by mean-std relative to the hip
+        mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
+            -1257.6155, -1297.9100, -1227.4360, -1220.5818, -1329.1154, -1301.5215,
+              797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920]),
+        torch.Tensor([ 15.5230,  19.4742,  25.6194,  15.5230,  19.4742,  25.6194, 183.8460,
+            172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
+            160.7282, 160.8192, 163.5823, 152.6740]))
+
+        pose3d_gt = (pose3d_gt - mean_3d)/std_3d
+        print('normalized 3d pose GT sample: ', pose3d_gt)
 
 
         num_keypoints_dt = len(coco_results[0]["keypoints"]) // 3
