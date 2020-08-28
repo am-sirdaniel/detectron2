@@ -290,6 +290,10 @@ class COCOEvaluator(DatasetEvaluator):
 
         if class_names is None or len(class_names) <= 1:
             return results
+
+        print('coco_eval, coco_eval.eval', coco_eval, coco_eval.eval)
+        print('coco_eval.eval.keys()', coco_eval.eval.keys())
+
         # Compute per-category AP
         # from https://github.com/facebookresearch/Detectron/blob/a6a835f5b8208c45d0dce217ce9bbda915f44df7/detectron/datasets/json_dataset_evaluator.py#L222-L252 # noqa
         precisions = coco_eval.eval["precision"]
@@ -567,6 +571,9 @@ def _evaluate_predictions_on_coco(
         num_keypoints_dt = len(coco_results[0]["keypoints"]) // 3
         num_keypoints_gt = len(next(iter(coco_gt.anns.values()))["keypoints"]) // 3
         num_keypoints_oks = len(coco_eval.params.kpt_oks_sigmas)
+
+        print('num_keypoints_dt, num_keypoints_gt, num_keypoints_oks', num_keypoints_dt, num_keypoints_gt, num_keypoints_oks)
+
         assert num_keypoints_oks == num_keypoints_dt == num_keypoints_gt, (
             f"[COCOEvaluator] Prediction contain {num_keypoints_dt} keypoints. "
             f"Ground truth contains {num_keypoints_gt} keypoints. "
