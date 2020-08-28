@@ -267,7 +267,7 @@ class COCOEvaluator(DatasetEvaluator):
             a dict of {metric name: score}
         """
         print('***************USING _derive_coco_results Method *****************')
-        
+
         metrics = {
             "bbox": ["AP", "AP50", "AP75", "APs", "APm", "APl"],
             "segm": ["AP", "AP50", "AP75", "APs", "APm", "APl"],
@@ -543,6 +543,7 @@ def _evaluate_predictions_on_coco(
             # COCOAPI requires every detection and every gt to have keypoints, so
             # we just take the first entry from both
 
+        print('pred_3d_pts[0]', coco_results[0]['pred_3d_pts'])
         print('pred_3d_pts[0] length', len(coco_results[0]['pred_3d_pts']))# Not Right ?
         print('total', len(coco_results))
         print('coco_results[0][pred_3d_pts]',  coco_results[0]['pred_3d_pts'])
@@ -553,6 +554,8 @@ def _evaluate_predictions_on_coco(
         print('pose_3d_gt length', len(pose_3d_gt))# Not Right ?
         print('pose_3d_gt', pose_3d_gt) #[18]
 
+        print('try length', len(coco_gt.anns.values()))
+        print('try length', len(list(map(lambda x:x['keypoints'], coco_gt.anns.values()))))
 
 
         #Normalize 3d GT by mean-std relative to the hip
