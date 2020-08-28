@@ -535,6 +535,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         print('pred_3d_results_per_image sample', pred_3d_results_per_image[0][0:3])
 
 
+        print ('can we get list of all methods in this class', dir(instances_per_image))
+        
         ###### pose 3d evaluation ####### Coco handles pose 2d evaluation
         # pose3d_pts = instances_per_image.gt_pose3d.cuda()
         # pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],18)
