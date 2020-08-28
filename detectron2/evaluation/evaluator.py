@@ -43,7 +43,9 @@ class DatasetEvaluator:
             inputs (list): the inputs that's used to call the model.
             outputs (list): the return value of `model(inputs)`
         """
-        pass
+        for input_, output in zip(inputs, outputs):
+            print('*******input_, output****', input_[0], output[0])
+                # do evaluation on single input/output pair
 
     def evaluate(self):
         """
