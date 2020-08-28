@@ -538,8 +538,8 @@ def _evaluate_predictions_on_coco(
         # COCOAPI requires every detection and every gt to have keypoints, so
         # we just take the first entry from both
 
-        print('coco_results[0]', coco_results[0])
-        print('next(iter(coco_gt.anns.values()))["keypoints"]', next(iter(coco_gt.anns.values()))["keypoints"])
+        print('coco_results[0]', coco_results[0]['pred_3d_pts'])
+        print('next(iter(coco_gt.anns.values()))["pred_3d_pts"]', next(iter(coco_gt.anns.values()))["pred_3d_pts"])
 
 
         num_keypoints_dt = len(coco_results[0]["keypoints"]) // 3
