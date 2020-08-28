@@ -68,6 +68,24 @@ class COCOeval_opt(COCOeval):
             return instances_cpp
 
         # Convert GT annotations, detections, and IOUs to a format that's fast to access in C++
+        
+
+        #### Dan #######
+        sample_ground_truth_instances = [
+            [self._gts[imgId, catId] for catId in p.catIds]
+            for imgId in p.imgIds
+        ]
+
+        sample_detected_instances = [
+            [self._dts[imgId, catId] for catId in p.catIds]
+            for imgId in p.imgIds
+        ]
+
+        print('sample_ground_truth_instances', sample_ground_truth_instances[0:2])
+        print('sample_detected_instances', sample_detected_instances[0:2])
+        ####################
+
+
         ground_truth_instances = [
             [convert_instances_to_cpp(self._gts[imgId, catId]) for catId in p.catIds]
             for imgId in p.imgIds
