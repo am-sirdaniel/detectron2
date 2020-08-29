@@ -464,6 +464,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     #num_instances_per_image = [len(i) for i in pred_instances]
     #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
     
+    print('=========================================================================')
+    raise
 
     if pred_keypoint_logits.shape[0] == 0 :
         return None
@@ -533,7 +535,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         #print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results_per_image
         instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
-        print('pred_3d_results_per_image sample', pred_3d_results_per_image[0][0:3])
+        print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
 
         #print('instances_per_image.get_fields', instances_per_image.get_fields())
         print ('can we get list of all methods in this class', dir(instances_per_image))
