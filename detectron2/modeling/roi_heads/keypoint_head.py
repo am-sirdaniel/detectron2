@@ -463,9 +463,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     #keypoint_results = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
     #num_instances_per_image = [len(i) for i in pred_instances]
     #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    
-    print('=========================================================================')
-    raise
+
 
     if pred_keypoint_logits.shape[0] == 0 :
         return None
