@@ -371,7 +371,7 @@ def instances_to_coco_json(instances, img_id):
 
     if has_3d_pts:
         print('YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSS. Found pred_3d_pts')
-        pred_3d_pts = instances.pred_keypoints
+        pred_3d_pts = instances.pred_3d_pts
 
     results = []
     for k in range(num_instance):
@@ -543,19 +543,23 @@ def _evaluate_predictions_on_coco(
             # COCOAPI requires every detection and every gt to have keypoints, so
             # we just take the first entry from both
 
+        #print('try length DT', len(coco_gt.anns.values()))
+        #print('try length DT', len(list(map(lambda x:x['pose_3d'], coco_gt.anns.values()))))
+
+
         print('pred_3d_pts[0]', coco_results[0]['pred_3d_pts'])
         print('pred_3d_pts[0] length', len(coco_results[0]['pred_3d_pts']))# Not Right ?
         print('total', len(coco_results))
         print('coco_results[0][pred_3d_pts]',  coco_results[0]['pred_3d_pts'])
         #print('next(iter(coco_gt)', coco_gt) 'an object'
 
-        pose_3d_gt = next(iter(coco_gt.anns.values()))['pose_3d'] #correct values 3,6
-        pose_3d_gt = torch.Tensor(pose_3d_gt).view(-1) #[18]
-        print('pose_3d_gt length', len(pose_3d_gt))# Not Right ?
-        print('pose_3d_gt', pose_3d_gt) #[18]
+        pose_3d_gt = list(map(lambda x:x['pose_3d'], coco_gt.anns.values())) #correct values N, 3,6
+        pose_3d_gt = torch.Tensor(pose_3d_gt).view(len(pose_3d_gt),-1) #[N, 18]
+        print('pose_3d_gt length', len(pose_3d_gt))# N
+        print('pose_3d_gt sample', pose_3d_gt[0]) #[1,18]
 
-        print('try length', len(coco_gt.anns.values()))
-        print('try length', len(list(map(lambda x:x['keypoints'], coco_gt.anns.values()))))
+        print('try length GT', len(coco_gt.anns.values()))
+        print('try length GT', len(list(map(lambda x:x['pose_3d'], coco_gt.anns.values()))))
 
 
         #Normalize 3d GT by mean-std relative to the hip
@@ -566,7 +570,7 @@ def _evaluate_predictions_on_coco(
             172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
             160.7282, 160.8192, 163.5823, 152.6740]))
 
-        pose_3d_gt = (pose_3d_gt - mean_3d)/std_3d
+        pose_3d_gt = (pose_3d_gt - mean_3d.view(1, 18))/std_3d.view(1, 18)
         print('normalized 3d pose GT sample: ', pose_3d_gt)
 
 
