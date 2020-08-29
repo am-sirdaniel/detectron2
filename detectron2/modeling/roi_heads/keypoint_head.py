@@ -433,12 +433,16 @@ def pck(target, pred, treshold=0.1):
     Percentage of Correct Keypoint for 3D pose Evaluation where PCKh @ 0.1m (10cm)
 
     Arguments:
-    target: A tensor of shape (1, 18)
-    pred: A tensor of shape (1, 18)
+    target: A tensor of shape (1, 18) : normalized values relative to hip
+    pred: A tensor of shape (1, 18) : normalized values relative to hip
+
+    Returns:
+        pck_score: A scalar value btw 0 and 1
     '''
     diff = torch.abs(target - pred)
     count = torch.sum(diff < treshold, dtype=torch.float)
-    return count/target.shape[1]
+    pck_score = count/target.shape[1]
+    return pck_score
 
 
 
