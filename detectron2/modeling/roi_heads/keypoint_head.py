@@ -573,13 +573,10 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
 
 ########################################################## MY CODE
 
+
 def weight_init(m):
     if isinstance(m, nn.Linear):
-        pass
-        #nn.init.constant(m.bias, 0)
-        #nn.init.kaiming_normal_(m.weight)
-        #nn.init.uniform_(m.weight, 0, 1)
-
+        nn.init.kaiming_normal(m.weight)
 
 class Linear(nn.Module):
     def __init__(self, linear_size, p_dropout=0.5):
@@ -791,7 +788,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
                 pass
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
                 #nn.init.uniform_(param, 0, 1)
 
     @classmethod
