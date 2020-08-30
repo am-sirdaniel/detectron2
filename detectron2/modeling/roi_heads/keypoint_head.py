@@ -35,7 +35,7 @@ from detectron2.utils.registry import Registry
 
 _TOTAL_SKIPPED = 0
 _TOTAL_SKIPPED_KPS = 0
-_LOSSES = []
+_LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 _PCK_SCORE = 0
 
 print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
@@ -366,8 +366,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30
 
-    global _LOSSES
-    _LOSSES.append(comb_loss)
+    global _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB
+    _LOSSES_2D.append(pose2d_loss)
+    _LOSSES_3D.append(pose3d_loss)
+    _LOSSES_COMB.append(comb_loss)
+
     storage = get_event_storage()  
     print('storage', storage)
     #storage.p     
@@ -385,11 +388,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # # plot progress
     #only display if pose 3d GT has no nans 
-    #if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
-    if 0:
+    if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
+    #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,2)
+        axes=fig.subplots(1,3)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
@@ -411,11 +414,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        axes[0].plot(_LOSSES)
+        axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
         # clear output window and diplay updated figure
-        #axes[2].plot(low_lossArray)
-        #axes[2].set_yscale('linear')
+        axes[1].plot(_LOSSES_3D)
+        axes[1].set_yscale('log')
+
+        axes[2].plot(_LOSSES_COMB)
+        axes[2].set_yscale('log')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
