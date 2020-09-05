@@ -434,7 +434,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     return comb_loss
 
 
-def pck(target, pred, treshold=0.1):
+def pck(target, pred, treshold=10):
     '''
     Percentage of Correct Keypoint for 3D pose Evaluation where PCKh @ 0.1m (10cm)
 
@@ -447,7 +447,7 @@ def pck(target, pred, treshold=0.1):
     '''
     diff = torch.abs(target - pred)
     count = torch.sum(diff < treshold, dtype=torch.float)
-    pck_score = count/target.shape[1]
+    pck_score = count/ (target.shape[0]*target.shape[1])
     return pck_score
 
 
@@ -788,7 +788,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
                 pass
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
                 #nn.init.uniform_(param, 0, 1)
 
     @classmethod
