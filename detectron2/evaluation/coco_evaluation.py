@@ -126,7 +126,7 @@ class COCOEvaluator(DatasetEvaluator):
             self._predictions.append(prediction)
 
 
-            print ('can we get list of all methods in this class', dir(self))
+            #print ('can we get list of all methods in this class', dir(self))
 
     def evaluate(self):
         print('***************USING evaluate Method *****************')
