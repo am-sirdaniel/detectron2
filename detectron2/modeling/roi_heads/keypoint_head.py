@@ -435,13 +435,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     return comb_loss
 
 
-def pck(target, pred, treshold=10):
+def pck(target, pred, treshold=100):
     '''
     Percentage of Correct Keypoint for 3D pose Evaluation where PCKh @ 0.1m (10cm)
 
     Arguments:
     target: A tensor of shape (1, 18) : normalized values relative to hip
-    pred: A tensor of shape (1, 18) : normalized values relative to hip
+    pred: A tensor of shape (1, 18) : normalized values relative to hippck
+    threshold87y 
 
     Returns:
         pck_score: A scalar value btw 0 and 1
