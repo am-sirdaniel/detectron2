@@ -366,6 +366,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30
     comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70
+    #omb_loss = pose2d_loss*1.0 + pose3d_loss*3.0
 
     global _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB
     _LOSSES_2D.append(pose2d_loss)
@@ -548,7 +549,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
 
         #print('instances_per_image.get_fields', instances_per_image.get_fields())
-        print ('can we get list of all methods in this class', dir(instances_per_image))
+        #print ('can we get list of all methods in this class', dir(instances_per_image))
 
         ###### pose 3d evaluation ####### Coco handles pose 2d evaluation
         # pose3d_pts = instances_per_image.gt_pose3d.cuda()
