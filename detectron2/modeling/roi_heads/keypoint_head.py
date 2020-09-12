@@ -340,8 +340,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_3d = integral_3d_innovate(pred_keypoint_logits)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape)
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
-    pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
-    print('what GT pose3d looks like', pose3d_gt[0])
+    #pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
+    #print('what GT pose3d looks like', pose3d_gt[0])
 
     ##Dont exclude any kps for 2nd model
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
@@ -358,14 +358,22 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #Normalize 3d GT by mean-std relative to the hip
     mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
         -1257.6155, -1297.9100, -1227.4360, -1220.5818, -1329.1154, -1301.5215,
-          797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920]).cuda(),
+          797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920])cuda(),
     torch.Tensor([ 15.5230,  19.4742,  25.6194,  15.5230,  19.4742,  25.6194, 183.8460,
         172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
         160.7282, 160.8192, 163.5823, 152.6740]).cuda())
 
-    #hip normalization first
-    #hip_mid = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
-    #pose3d_gt = pose3d_gt - hip_mid
+
+    #Normalize relative to the hip
+    #pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
+    midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
+
+    print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.unsqueeze(1).shape)
+    pose3d_gt = pose3d_gt - midhip.unsqueeze(1)
+    pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], -1)
+
+
+    print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
     pose3d_gt = (pose3d_gt - mean_3d)/std_3d
     print('normalized 3d pose GT sample: ', pose3d_gt[0])
@@ -446,6 +454,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         
 
         #un-normalize for display 3D
+        mean_3d, std_3d = mean_3d.view(3,6), std_3d.view(3,6)
+
         pose3d_gt = (pose3d_gt * std_3d) + mean_3d
         pred_3d = (pred_3d * std_3d) + mean_3d
 
