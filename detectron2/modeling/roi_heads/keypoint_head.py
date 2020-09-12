@@ -375,6 +375,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
 
+    pose3d_gt_raw = pose3d_gt
     pose3d_gt = (pose3d_gt - mean_3d)/std_3d
     print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
@@ -459,14 +460,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #un-normalize for display 3D
         mean_3d, std_3d = mean_3d.view(6,3), std_3d.view(6,3)
 
-        print('pose3d_gt_visual, std_3d, mean_3d', pose3d_gt_visual.shape, std_3d.shape, mean_3d.shape)
-        pose3d_gt_visual = (pose3d_gt_visual * std_3d) + mean_3d
-        pred_3d = (pred_3d * std_3d) + mean_3d
+        #print('pose3d_gt_visual, std_3d, mean_3d', pose3d_gt_visual.shape, std_3d.shape, mean_3d.shape)
+        #pose3d_gt_raw = (pose3d_gt_raw * std_3d) + mean_3d
+        pred_3d = (pred_3d['pose_3d'] * std_3d) + mean_3d
 
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        custom_plotting.plot_3Dpose(axs[0], pose3d_gt_visual[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
