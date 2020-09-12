@@ -12,7 +12,7 @@ from detectron2.modeling.roi_heads import custom_plotting
 import matplotlib.pyplot as plt
 
 #import utils
-import plotting
+#import plotting
 #import triangulate 
 import numpy as np
 
@@ -23,9 +23,8 @@ import pandas as pd
 #import torchvision.transforms as transforms
 #import h5py
 import os
-
+from IPython import display
 #import torch.nn.functional as nn
-
 
 from detectron2.config import configurable
 from detectron2.layers import Conv2d, ConvTranspose2d, cat, interpolate
