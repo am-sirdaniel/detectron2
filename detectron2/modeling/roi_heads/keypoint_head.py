@@ -434,7 +434,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,3)
+        axes=fig.subplots(1,4)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
@@ -464,6 +464,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
+
+        axes[3].plot(pred_keypoint_logits[0].permute(1,2,0))
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
