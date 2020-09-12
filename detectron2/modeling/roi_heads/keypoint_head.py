@@ -496,7 +496,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         #print('pose3d_gt_visual, std_3d, mean_3d', pose3d_gt_visual.shape, std_3d.shape, mean_3d.shape)
         #pose3d_gt_raw = (pose3d_gt_raw * std_3d) + mean_3d
-        pred_3d = (pred_3d['pose_3d'] * std_3d) + mean_3d
+
+        pred_3d = pred_3d['pose_3d']
+
+        print("before pred_3d", pred_3d[0])
+        pred_3d = (pred_3d * std_3d) + mean_3d
+        print("after pred_3d", pred_3d[0])
 
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
