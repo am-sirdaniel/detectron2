@@ -120,7 +120,7 @@ def integral_2d_innovate(heatmap_, rois):
     # #print('pose relative global coordinates', pose[0][0])
     # return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
     #*******************************************************************
-       
+
     start_x = rois[:, 0]
     start_y = rois[:, 1]
 
@@ -302,7 +302,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('confirm shape after 2d integral ', pred_integral['pose_2d'].shape)
+    print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
     print('valid', valid)
     pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
 
@@ -564,7 +564,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #unstack
-    i_, j_  = torch.unbind(out1['pose_2d'], dim=2)
+    i_, j_  = torch.unbind(out1['pose_2d global'], dim=2)
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
 
