@@ -507,7 +507,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
