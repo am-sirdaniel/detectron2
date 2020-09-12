@@ -388,6 +388,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
 
     pose3d_gt = pose3d_gt.reshape(pose3d_gt.shape[0], 6, 3)
+    pose3d_gt_visual = pose3d_gt
+    
     m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
     print('kps shape before removing invalid for 3d', pose3d_gt.shape)
     pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
@@ -456,13 +458,13 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #un-normalize for display 3D
         mean_3d, std_3d = mean_3d.view(3,6), std_3d.view(3,6)
 
-        pose3d_gt = (pose3d_gt * std_3d) + mean_3d
+        pose3d_gt_visual = (pose3d_gt_visual * std_3d) + mean_3d
         pred_3d = (pred_3d * std_3d) + mean_3d
 
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        custom_plotting.plot_3Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[0], pose3d_gt_visual[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
