@@ -389,7 +389,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     pose3d_gt = pose3d_gt.reshape(pose3d_gt.shape[0], 6, 3)
     pose3d_gt_visual = pose3d_gt
-    
+
+    #use valid to calculate only the loss
     m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
     print('kps shape before removing invalid for 3d', pose3d_gt.shape)
     pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
