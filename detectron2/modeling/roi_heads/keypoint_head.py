@@ -37,7 +37,7 @@ _TOTAL_SKIPPED_KPS = 0
 _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 _PCK_SCORE = 0
 
-print('********************USING INTEGRAL INNOVATE SCRIPT *****************')
+print('********************USING MASK DIRECT 2D+3D SCRIPT *****************')
 
 __all__ = [
     "ROI_KEYPOINT_HEAD_REGISTRY",
