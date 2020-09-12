@@ -457,7 +457,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         
 
         #un-normalize for display 3D
-        mean_3d, std_3d = mean_3d.view(3,6), std_3d.view(3,6)
+        mean_3d, std_3d = mean_3d.view(1,3,6), std_3d.view(1,3,6)
 
         pose3d_gt_visual = (pose3d_gt_visual * std_3d) + mean_3d
         pred_3d = (pred_3d * std_3d) + mean_3d
