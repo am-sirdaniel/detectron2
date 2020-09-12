@@ -91,29 +91,49 @@ def integral_2d_innovate(heatmap_, rois):
     #h_norm = torch.reshape(h_norm, (heatmap.shape[0], heatmap.shape[1], heatmap.shape[2],heatmap.shape[3]))
     
 
-
+    #*******************************************************************
     #Any NAN in hnorm
-    test = h_norm.cpu().detach().clone()
-    test = test.numpy()
-    print('HNORM contains nan ?:', ['YES' if np.sum(np.isnan(test)) else 'NO'])
+    # test = h_norm.cpu().detach().clone()
+    # test = test.numpy()
+    # print('HNORM contains nan ?:', ['YES' if np.sum(np.isnan(test)) else 'NO'])
 
-    #DISCRETE FORM of the Integral Equation
-    # computing integral in relative global coordinates directly
+    # #Our choice (0->1) ROI coordinates 
+    # x_list = torch.linspace(-1,1, w).cuda() # I want values btw -1 and 1 bcuz gt 2d is that range 
+    # y_list = torch.linspace(-1,1, h).cuda()
+    # # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
+    # i,j = torch.meshgrid(x_list, y_list)
 
-    #print('rois in integral function ', rois)
-    # start_x = rois[:, 0]
-    # start_y = rois[:, 1]
+    # #weighted by their probabilities.
+    # i_ = torch.sum(i*h_norm, dim=(-1,-2))
+    # j_ = torch.sum(j*h_norm, dim=(-1,-2))
 
-    # scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
-    # scale_y = 1 / (rois[:, 3] - rois[:, 1])
 
-    # scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
-    # scale_inv_y = (rois[:, 3] - rois[:, 1])
+    # #Modified arrangement
+    # pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+    #                                    #[j,j,j,,,]]
+
+    # print('checking, is I and J well placed as x,y?', pose[0][0:2])
+    # print('min and max of I ', torch.min(i_), torch.max(i_))
+    # print('min and max of J', torch.min(j_), torch.max(j_))
+
+    # #return relative global coordinates
+    # #print('pose relative global coordinates', pose[0][0])
+    # return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
+    #*******************************************************************
+       
+    start_x = rois[:, 0]
+    start_y = rois[:, 1]
+
+    scale_x = 1 / (rois[:, 2] - rois[:, 0])#bottom part of min-max normalization with division
+    scale_y = 1 / (rois[:, 3] - rois[:, 1])
+
+    scale_inv_x = (rois[:, 2] - rois[:, 0]) #bottom part of min-max normalization without division yet
+    scale_inv_y = (rois[:, 3] - rois[:, 1])
 
     #DISCRETE FORM of integral is not expensive 
     #Our choice (0->1) ROI coordinates 
-    x_list = torch.linspace(-1,1, w).cuda() # I want values btw -1 and 1 bcuz gt 2d is that range 
-    y_list = torch.linspace(-1,1, h).cuda()
+    x_list = torch.linspace(0,1, w).cuda()
+    y_list = torch.linspace(0,1, h).cuda()
     # 3D Heatmap z_list = torch.linspace(0,1,z).cuda()
     i,j = torch.meshgrid(x_list, y_list)
 
@@ -121,26 +141,30 @@ def integral_2d_innovate(heatmap_, rois):
     i_ = torch.sum(i*h_norm, dim=(-1,-2))
     j_ = torch.sum(j*h_norm, dim=(-1,-2))
 
-
-    ########  WHY NOT IN GLOBAL COORDS?   ################ ???????????????
-
     # transforming back to global relative coords
     #print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
-    # print('i_ (before) as 0-1 coordinates', i_[0])
-    # i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
-    # j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
+    print('i_ (before) as 0-1 coordinates', i_[0])
+    i_g = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
+    j_g = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
 
     #Modified arrangement
-    pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+    pose_glob  = torch.stack((i_g,j_g),dim=2) #[[i,i,i,,], #(N,K, 2)
                                        #[j,j,j,,,]]
 
-    print('checking, is I and J well placed as x,y?', pose[0][0:2])
+    pose_norm = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+                                       #[j,j,j,,,]]
+
+
+    print('checking, is I and J well placed as x,y?', pose_glob[0][0:2])
     print('min and max of I ', torch.min(i_), torch.max(i_))
     print('min and max of J', torch.min(j_), torch.max(j_))
 
     #return relative global coordinates
     #print('pose relative global coordinates', pose[0][0])
-    return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
+    return ({'probabilitymap': h_norm, 'pose_2d global': pose_glob, 'pose_2d norm': pose_norm,}) #(N,K, 2)
+
+
+
 
 def integral_3d_innovate(heatmap_):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
@@ -280,7 +304,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     print('confirm shape after 2d integral ', pred_integral['pose_2d'].shape)
     print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d'].view(N * 6, -1)[valid]
+    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
 
 
     #normalize kps
