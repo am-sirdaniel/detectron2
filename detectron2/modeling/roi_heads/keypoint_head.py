@@ -518,7 +518,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
 
-        axes[3].imshow(pred_keypoint_logits[0][0].detach().cpu())
+        axes[3].imshow(pred_keypoint_logits[0][5].detach().cpu()) #last joint
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
