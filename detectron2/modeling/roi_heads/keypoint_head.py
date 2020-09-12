@@ -340,7 +340,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_3d = integral_3d_innovate(pred_keypoint_logits)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape)
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
-    #pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
+    pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
     #print('what GT pose3d looks like', pose3d_gt[0])
 
     ##Dont exclude any kps for 2nd model
@@ -365,7 +365,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
 
     #Normalize relative to the hip
-    #pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
+    pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
     midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
 
     print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.unsqueeze(1).shape)
