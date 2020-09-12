@@ -385,28 +385,38 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('reshape', pose3d_gt.view(-1,3).shape)
     #pose3d_gt = pose3d_gt.view(-1, 3) #[valid]
     #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
-    pred_3d_valid = pred_3d['pose_3d'].view(N * 6, -1)[valid]
+    #pred_3d_valid = pred_3d['pose_3d'].view(N * 6, -1)[valid]
 
 
     pose3d_gt = pose3d_gt.reshape(pose3d_gt.shape[0], 6, 3)
     pose3d_gt_visual = pose3d_gt
 
     #use valid to calculate only the loss
-    m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
-    print('kps shape before removing invalid for 3d', pose3d_gt.shape)
-    pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
-    print('kps removed invalid shape for 3d', pose3d_gt.shape)
+    # m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
+    # print('kps shape before removing invalid for 3d', pose3d_gt.shape)
+    # pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
+    # print('kps removed invalid shape for 3d', pose3d_gt.shape)
 
 
-    print('example pred 3d: ', pred_3d_valid[-3:])
-    print('example kps 3d: ', pose3d_gt[-3:])
-    print()
-    #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    print('min and max of pred_integral_v1', torch.min(pred_3d_valid), torch.max(pred_3d_valid))
-    print('min and max of kps', torch.min(pose3d_gt), torch.max(pose3d_gt))
+    # print('example pred 3d: ', pred_3d_valid[-3:])
+    # print('example kps 3d: ', pose3d_gt[-3:])
+    # print()
+    # #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
+    # print('min and max of pred_integral_v1', torch.min(pred_3d_valid), torch.max(pred_3d_valid))
+    # print('min and max of kps', torch.min(pose3d_gt), torch.max(pose3d_gt))
 
-    pose3d_loss = torch.nn.functional.mse_loss(pred_3d_valid, pose3d_gt, reduction = 'sum')
-    print('original pose3d loss ', pose2d_loss)
+    # pose3d_loss = torch.nn.functional.mse_loss(pred_3d_valid, pose3d_gt, reduction = 'sum')
+    pred_3d_star = pred_3d['pose_3d'].view(-1, 3) #[valid]
+    pose3d_gt_star = pose3d_gt.view(-1, 3) #[valid]
+
+    all_nan = torch.isnan(pose3d_gt_star)
+
+    pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
+   
+
+    #print('original pose3d loss ', pose2d_loss)
+    
+
     if normalizer is None:
         normalizer = valid.numel()
     pose3d_loss /= normalizer
