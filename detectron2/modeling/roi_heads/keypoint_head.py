@@ -375,7 +375,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     ##############################################################
 
     #comb_loss = pose2d_loss*1.0 + pose3d_loss*0.30 # score 0.6983
-    comb_loss = pose2d_loss*1.0 + pose3d_loss*0.50 # score 
+    comb_loss = pose2d_loss*0.8 + pose3d_loss*0.30 # score 
     #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70
     #comb_loss = pose2d_loss*1.0 + pose3d_loss*3.0
 
@@ -425,7 +425,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -821,8 +821,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
-
