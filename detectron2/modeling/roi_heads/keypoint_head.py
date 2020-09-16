@@ -302,6 +302,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
+    hnorm_2d = pred_integral['probabilitymap']
     print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
     print('valid', valid)
     pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
@@ -463,7 +464,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30  #(Good)
+    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70  #(Good)
+    #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30  #(Good 0.6011)
     #comb_loss = pose2d_loss*0.30 + pose3d_loss*0.70
 
     print('normalizer amount: ', normalizer)
@@ -529,7 +531,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
 
-        axes[3].imshow(pred_keypoint_logits[0][0].detach().cpu()) #first joint
+        axes[3].imshow(hnorm_2d[0][0].detach().cpu()) #first joint
 
         #display.clear_output(wait=True)
         #display.display(plt.gcf())
