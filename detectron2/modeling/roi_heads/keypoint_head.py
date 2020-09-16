@@ -494,7 +494,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         f = plt.figure(figsize=(10,10))
         axs.append(f.add_subplot(2,2,3, projection='3d'))
         axs.append(f.add_subplot(2,2,4, projection='3d'))
-        axs.append(f.add_subplot(1,1,1))
+        axs.append(plt.figure(figsize=(5,5)).add_subplot(1,1,1))
 
         # plot the ground truth and the predicted pose on top of the image
         #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
@@ -531,7 +531,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         axes[3].imshow(pred_keypoint_logits[0][0].detach().cpu()) #first joint
 
-        display.clear_output(wait=True)
+        #display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
