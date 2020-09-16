@@ -324,7 +324,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         [ 92.0391,  33.6960]]).cuda()
 
     #global mean-std normalization
-    #kps = (kps - kp_mean)/kp_std
+    kps = (kps - kp_mean)/kp_std
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
     print('kps shape before removing invalid for 2d', kps.shape)
