@@ -494,7 +494,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         f = plt.figure(figsize=(10,10))
         axs.append(f.add_subplot(2,2,3, projection='3d'))
         axs.append(f.add_subplot(2,2,4, projection='3d'))
-        axs.append(plt.figure(figsize=(5,5)).add_subplot(1,1,1))
+        #axs.append(plt.figure(figsize=(5,5)).add_subplot(1,1,1))
 
         # plot the ground truth and the predicted pose on top of the image
         #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
@@ -630,8 +630,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
         #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
-        instances_per_image.pred_keypoints = keypoint_results_per_image.squeeze(0)
-        instances_per_image.pred_3d_pts = pred_3d_results_per_image.squeeze(0)
+        instances_per_image.pred_keypoints = keypoint_results_per_image#.squeeze(0)
+        instances_per_image.pred_3d_pts = pred_3d_results_per_image#.squeeze(0)
         #print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
 
     
