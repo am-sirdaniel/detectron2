@@ -302,9 +302,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
+    print('confirm shape after 2d integral ', pred_integral['pose_2d norm'].shape)
     print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
+    pred_integral_v1 = pred_integral['pose_2d norm'].view(N * 6, -1)[valid]
 
 
     #normalize kps
@@ -347,8 +347,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         normalizer = valid.numel()
     pose2d_loss /= normalizer
 
-    my_normalizer= 720 + 1280 
-    pose2d_loss /= my_normalizer
+    #my_normalizer= 720 + 1280 
+    #pose2d_loss /= my_normalizer
 
     
     #
@@ -446,7 +446,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
    
 
-    #print('original pose3d loss ', pose2d_loss)
+    print('original pose3d loss ', pose2d_loss)
     
 
     if normalizer is None:
@@ -527,7 +527,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
 
-        axes[3].imshow(pred_keypoint_logits[0][5].detach().cpu()) #last joint
+        axes[3].imshow(pred_keypoint_logits[0][0].detach().cpu()) #first joint
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
