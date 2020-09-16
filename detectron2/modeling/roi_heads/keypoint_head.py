@@ -628,7 +628,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results_per_image.squeeze(0)
-        instances_per_image.pred_3d_pts = pred_3d_results_per_image .squeeze(0)
+        instances_per_image.pred_3d_pts = pred_3d_results_per_image.squeeze(0)
         #print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
 
     
