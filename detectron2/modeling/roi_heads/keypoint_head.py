@@ -518,7 +518,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[-1].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[-1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_2Dpose(axs[2], pred_integral['pose_2d global'][-1].detach().cpu().T,bones=bones_ego, color_order=color_order_ego)
+        #custom_plotting.plot_2Dpose(axs[2], pred_integral['pose_2d global'][-1].detach().cpu().T,bones=bones_ego, color_order=color_order_ego)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -853,7 +853,7 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
                 pass
                 # Caffe2 implementation uses MSRAFill, which in fact
                 # corresponds to kaiming_normal_ in PyTorch
-                #nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
                 #nn.init.uniform_(param, 0, 1)
 
     @classmethod
