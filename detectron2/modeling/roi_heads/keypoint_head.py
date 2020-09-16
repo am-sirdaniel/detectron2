@@ -302,9 +302,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('confirm shape after 2d integral ', pred_integral['pose_2d norm'].shape)
+    print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
     print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d norm'].view(N * 6, -1)[valid]
+    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
 
 
     #normalize kps
@@ -324,7 +324,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         [ 92.0391,  33.6960]]).cuda()
 
     #global mean-std normalization
-    kps = (kps - kp_mean)/kp_std
+    #kps = (kps - kp_mean)/kp_std
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
     print('kps shape before removing invalid for 2d', kps.shape)
@@ -347,8 +347,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         normalizer = valid.numel()
     pose2d_loss /= normalizer
 
-    #my_normalizer= 720 + 1280 
-    #pose2d_loss /= my_normalizer
+    my_normalizer= 720 + 1280 
+    pose2d_loss /= my_normalizer
 
     
     #
@@ -446,7 +446,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
    
 
-    print('original pose3d loss ', pose2d_loss)
+    #print('original pose3d loss ', pose2d_loss)
     
 
     if normalizer is None:
@@ -494,6 +494,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         f = plt.figure(figsize=(10,10))
         axs.append(f.add_subplot(2,2,3, projection='3d'))
         axs.append(f.add_subplot(2,2,4, projection='3d'))
+        axs.append(f.add_subplot(1,1,1))
 
         # plot the ground truth and the predicted pose on top of the image
         #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
@@ -517,6 +518,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[-1].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[-1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_2Dpose()
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -529,7 +531,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         axes[3].imshow(pred_keypoint_logits[0][0].detach().cpu()) #first joint
 
-        #display.clear_output(wait=True)
+        display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
