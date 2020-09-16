@@ -515,8 +515,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[-1].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pred_3d[-1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -601,7 +601,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
-    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
     try:
         print('pred keypoint_results after split', keypoint_results.tensor.shape)
         print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
