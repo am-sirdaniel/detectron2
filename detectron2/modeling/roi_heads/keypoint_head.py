@@ -464,7 +464,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70  #(Good)
+    comb_loss = pose2d_loss*1.0 + pose3d_loss*0.3
+    #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70  #(diverged)
     #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30  #(Good 0.6011)
     #comb_loss = pose2d_loss*0.30 + pose3d_loss*0.70
 
