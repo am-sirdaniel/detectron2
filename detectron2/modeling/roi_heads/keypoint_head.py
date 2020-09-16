@@ -529,7 +529,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         axes[3].imshow(pred_keypoint_logits[0][0].detach().cpu()) #first joint
 
-        display.clear_output(wait=True)
+        #display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
