@@ -237,9 +237,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     hnorm_2d = pred_integral['probabilitymap']
     print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
-    #print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
-
+    
 
     cnt_, indexing, better_logits = 0,0,[]
     for instances_per_image in instances:
@@ -291,7 +289,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         better_logits.append(best_2D) 
         ###################################
         
-        kps.append(keypoints.tensor[:,:,0:2][0].unsqueeze(0)) #exclude visibility out
+        kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         p3d.append(pose3d_pts[0].unsqueeze(0))
 
     if len(heatmaps):
@@ -370,10 +368,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     kps = kps.view(s1*s2, -1)[valid]
     print('kps removed invalid shape for 2d', kps.shape)
 
+    #print('valid', valid)
+    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
 
-    print('example pred 2d: ', pred_integral_v1[-3:])
-    print('example kps 2d: ', kps[-3:])
-    print()
+    #print('example pred_integral_v1: ', pred_integral_v1[-3:])
+    #print('example kps 2d: ', kps[-3:])
+    #print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(pred_integral_v1))
     print('min and max of kps', torch.min(kps), torch.max(kps))
