@@ -239,8 +239,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         if len(instances_per_image) == 0:
             continue
 
-        print('instances_per_image', instances_per_image)
+        #print('instances_per_image', instances_per_image) #contains grndtruths
         keypoints = instances_per_image.gt_keypoints
+        print('keypoints.tensor[:,:,0:2] shape', keypoints.tensor[:,:,0:2].shape)
+        print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2])
         # if len(keypoints) ==0:
         #   print('EMPTY KEYPOINTS, WHY?') 
         #   continue
@@ -252,6 +254,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
         print('pose3d_pts shape', pose3d_pts.shape)
+        print('pose3d_pts ', pose3d_pts)
         ############################################################
         #e.g (8,6,3)
         #print('Daniel test keypoints', keypoints.tensor.shape)
@@ -265,7 +268,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         heatmaps.append(heatmaps_per_image.view(-1)) #N*K
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
         
-        print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
+        
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         ###################################
         p3d.append(pose3d_pts)
