@@ -309,7 +309,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         storage.put_scalar("kpts_num_skipped_batches", _TOTAL_SKIPPED, smoothing_hint=False)
         return pred_keypoint_logits.sum() * 0
 
-
+    print('indices', indices)
     better_logits = torch.cat(better_logits)
     print('better_logits', better_logits.shape)
     print('length of better_logits should alwasys be three ', len(better_logits))
@@ -460,7 +460,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     if normalizer is None:
         normalizer = valid.numel()
-    pose3d_loss /= normalizer
+    pose3d_loss /= 3
 
 
     #consider all valid
