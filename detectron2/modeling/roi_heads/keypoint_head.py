@@ -310,7 +310,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         return pred_keypoint_logits.sum() * 0
 
 
-    better_logits = torch.Tensor(better_logits)
+    better_logits = torch.cat(better_logits)
     print('better_logits', better_logits.shape)
     print('length of better_logits should alwasys be three ', len(better_logits))
 
