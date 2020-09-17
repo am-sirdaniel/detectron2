@@ -170,13 +170,16 @@ def integral_2d_innovate(heatmap_, rois):
 def integral_3d_innovate(heatmap_, best_index):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
-    # H Heatmap, X,Y,Z location maps
-    heatmap = heatmap_[best_index,0:6,:,:]
+    #select best
+    heatmap = heatmap_[best_index].unsqueeze(0)
+
+    heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
 
-    location_map_X = heatmap_[best_index,6:12,:,:]
-    location_map_Y = heatmap_[best_index,12:18,:,:]
-    location_map_Z = heatmap_[best_index,18:24,:,:]
+    # H Heatmap, X,Y,Z location maps
+    location_map_X = heatmap_[:,6:12,:,:]
+    location_map_Y = heatmap_[:,12:18,:,:]
+    location_map_Z = heatmap_[:,18:24,:,:]
 
      #implementing softmax ,#soving the numerical problem
     heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) 
