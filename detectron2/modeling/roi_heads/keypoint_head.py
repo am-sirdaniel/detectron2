@@ -171,9 +171,9 @@ def integral_3d_innovate(heatmap_,  indices = []):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
     #select best
-    #heatmap_ = heatmap_[best_index].unsqueeze(0)
+    heatmap_ = heatmap_[indices].unsqueeze(0)
 
-    heatmap = heatmap_[indices,0:6,:,:]
+    heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
 
     # H Heatmap, X,Y,Z location maps
