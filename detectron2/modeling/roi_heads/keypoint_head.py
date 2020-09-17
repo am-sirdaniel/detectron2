@@ -281,7 +281,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #***** Pass in 2D best**************
         num = keypoints.tensor[:,:,0:2].shape[0]
         start = indexing
-        stop = indexing + num
+        indexing = indexing + num
+        stop = indexing
 
         a,b = pred_integral['pose_2d global'][start:stop], keypoints.tensor[:,:,0:2]
         perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
