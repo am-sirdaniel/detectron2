@@ -10,6 +10,7 @@ from torch.nn import functional as F
 import numpy as np
 from detectron2.modeling.roi_heads import custom_plotting 
 import matplotlib.pyplot as plt
+import cv2
 
 #import utils
 #import plotting
@@ -285,7 +286,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         return pred_keypoint_logits.sum() * 0
 
     print('{} images in batch (training)'.format(cnt_))
-    print('GT 2d is {} GT 3d is {} before cat transformation'.format(len(kps), len(p3d))
+    print('GT 2d is {} GT 3d is {} before cat transformation'.format(len(kps), len(p3d)))
 
     kps = torch.cat(kps)
     p3d = torch.cat(p3d)
@@ -504,7 +505,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         f = plt.figure(figsize=(10,10))
         axs.append(f.add_subplot(2,2,3, projection='3d'))
         axs.append(f.add_subplot(2,2,4, projection='3d'))
-        #axs.append(plt.figure(figsize=(5,5)).add_subplot(1,1,1))
+        axs_new = plt.figure(figsize=(10,10)).add_subplot(1,1,1)
 
         # plot the ground truth and the predicted pose on top of the image
         #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
@@ -526,9 +527,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
+        custom_plotting.plot_2Dpose(axs_new, pred_integral['pose_2d global'][-1].detach().cpu().T,bones=bones_ego, color_order=color_order_ego)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[-1].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[-1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        #custom_plotting.plot_2Dpose(axs[2], pred_integral['pose_2d global'][-1].detach().cpu().T,bones=bones_ego, color_order=color_order_ego)
+        
+        img = '/content/black_img2.png'
+        img = torch.Tensor(cv2.imread(img))
+
+        custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][-1].detach().cpu(), img, ax=plt):
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
