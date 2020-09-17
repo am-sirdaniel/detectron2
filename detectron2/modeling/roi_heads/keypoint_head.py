@@ -241,7 +241,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
 
 
-    cnt_ = 0, indexing  = 0, better_logits = []
+    cnt_, indexing, better_logits = 0,0,[]
     for instances_per_image in instances:
         cnt_+=1
         if len(instances_per_image) == 0:
