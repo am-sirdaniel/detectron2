@@ -534,7 +534,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         img = '/content/black_img2.png'
         img = torch.Tensor(cv2.imread(img))
 
-        custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][-1].detach().cpu(), img, ax=plt):
+        custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][-1].detach().cpu(), img, ax=plt)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
