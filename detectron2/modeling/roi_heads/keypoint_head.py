@@ -409,7 +409,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
 
 
-    print('Is pose3d_gt (3,18)?', pose3d_gt.shape) #3,18
+    print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #3,18
 
     #Normalize 3d GT by mean-std relative to the hip (Project 2)
     # mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
@@ -532,7 +532,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         
         img = '/content/black_img2.png'
-        img = torch.Tensor(cv2.imread(img))
+        img = cv2.imread(img)
+        img = cv2.resize(img, (1280, 720))
+        img = torch.Tensor(img)
 
         custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][-1].detach().cpu(), img, ax=plt)
 
@@ -588,6 +590,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
+    print('pred_keypoint_logits', pred_keypoint_logits)
     out1 = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out1['probabilitymap']
     print('2d heatmap_norm shape', heatmap_norm.shape)
