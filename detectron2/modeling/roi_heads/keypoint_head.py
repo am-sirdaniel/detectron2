@@ -171,7 +171,7 @@ def integral_3d_innovate(heatmap_, best_index):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
     #select best
-    heatmap = heatmap_[best_index].unsqueeze(0)
+    heatmap_ = heatmap_[best_index].unsqueeze(0)
 
     heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
