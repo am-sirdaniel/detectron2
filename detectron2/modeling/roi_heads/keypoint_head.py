@@ -167,16 +167,16 @@ def integral_2d_innovate(heatmap_, rois):
 
 
 
-def integral_3d_innovate(heatmap_):
+def integral_3d_innovate(heatmap_, best_index):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
     # H Heatmap, X,Y,Z location maps
-    heatmap = heatmap_[:,0:6,:,:]
+    heatmap = heatmap_[best_index,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
 
-    location_map_X = heatmap_[:,6:12,:,:]
-    location_map_Y = heatmap_[:,12:18,:,:]
-    location_map_Z = heatmap_[:,18:24,:,:]
+    location_map_X = heatmap_[best_index,6:12,:,:]
+    location_map_Y = heatmap_[best_index,12:18,:,:]
+    location_map_Z = heatmap_[best_index,18:24,:,:]
 
      #implementing softmax ,#soving the numerical problem
     heatmap = heatmap - torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) 
@@ -191,7 +191,7 @@ def integral_3d_innovate(heatmap_):
     pose3d  = torch.stack((i_,j_,z_),dim=2) #[[i,i,i,,],
                                        #[j,j,j,,,]]
 
-    return ({'probabilitymap': h_norm, 'pose_3d': pose3d}) #(N,K,3)
+    return ({'probabilitymap': h_norm, 'pose_3d': pose3d}) #(1,K,3)
 
 
 def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
@@ -298,6 +298,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     print('GT pose2d shape', kps.shape)
     print('GT pose3d shape', p3d.shape)
 
+    kps_origin = kps
+
     print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
@@ -371,27 +373,24 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
 
     ############################################################
+    #***** Pass in 2D best**************
+    a,b = pred_integral['pose_2d global'], kps_origin
+    perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
+    best_index = np.argmin(perf)
+    print('best_index', best_index)
+    best_2D = a[best_index].unsqueeze(0)
+    print('best_2D shape', best_2D.shape)
 
-    #pred_integral_v2 = pred_integral['pose_2d'].reshape(N, -1)
-    #print('input to linear pred_integral', pred_integral_v2.shape)
-
-    pred_3d = integral_3d_innovate(pred_keypoint_logits)
-    print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape)
+    pred_3d = integral_3d_innovate(pred_keypoint_logits, best_index)
+    print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape) # (1,k,3)
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
+    
     pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
-    #print('what GT pose3d looks like', pose3d_gt[0])
+    pose3d_gt = pose3d_gt[0].unsqueeze(0) #(1,18) pick only 1 since they are duplicates
 
-    ##Dont exclude any kps for 2nd model
-    ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
-    # pred_3d = linermodel(pred_integral_v2)
-    # print('output shape from linear pred_integral', pred_3d.shape)
-    # print('what pred pose3d looks like', p3d[0])
-    # pose3d_gt = p3d.reshape(p3d.shape[0],-1)
-    # print('what GT pose3d looks like', pose3d_gt[0])
-    
-    
 
-    #print('Is pose3d_gt (N,18)?', pose3d_gt.shape) #N,18
+
+    print('Is pose3d_gt (1,18)?', pose3d_gt.shape) #1,18
 
     #Normalize 3d GT by mean-std relative to the hip (Project 2)
     # mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
@@ -425,32 +424,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pose3d_gt = (pose3d_gt - mean_3d)/std_3d
     print('normalized 3d pose GT sample: ', pose3d_gt[0])
 
-    #pred_3d = pred_3d.view(-1, 3) #[valid]
-    #print('solving a bug: ', pose3d_gt.shape, type(pose3d_gt))
-    #print('reshape', pose3d_gt.reshape(-1,3).shape, valid)
-    #print('reshape', pose3d_gt.view(-1,3).shape)
-    #pose3d_gt = pose3d_gt.view(-1, 3) #[valid]
-    #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
-    #pred_3d_valid = pred_3d['pose_3d'].view(N * 6, -1)[valid]
-
-
     pose3d_gt = pose3d_gt.reshape(pose3d_gt.shape[0], 6, 3)
     pose3d_gt_visual = pose3d_gt
-
-    #use valid to calculate only the loss
-    # m1, m2 = pose3d_gt.shape[0], pose3d_gt.shape[1] #shape
-    # print('kps shape before removing invalid for 3d', pose3d_gt.shape)
-    # pose3d_gt = pose3d_gt.view(m1*m2, -1)[valid]
-    # print('kps removed invalid shape for 3d', pose3d_gt.shape)
-
-
-    # print('example pred 3d: ', pred_3d_valid[-3:])
-    # print('example kps 3d: ', pose3d_gt[-3:])
-    # print()
-    # #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
-    # print('min and max of pred_integral_v1', torch.min(pred_3d_valid), torch.max(pred_3d_valid))
-    # print('min and max of kps', torch.min(pose3d_gt), torch.max(pose3d_gt))
-
+    
     # pose3d_loss = torch.nn.functional.mse_loss(pred_3d_valid, pose3d_gt, reduction = 'sum')
     pred_3d_star = pred_3d['pose_3d'].view(-1, 3) #[valid]
     pose3d_gt_star = pose3d_gt.view(-1, 3) #[valid]
@@ -532,7 +508,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        custom_plotting.plot_2Dpose(axs_new, pred_integral['pose_2d global'][-1].detach().cpu().T,bones=bones_ego, color_order=color_order_ego)
+        custom_plotting.plot_2Dpose(axs_new, pred_integral['pose_2d global'][0].detach().cpu().T,bones=bones_ego, color_order=color_order_ego)
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[-1].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[-1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         
