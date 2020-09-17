@@ -288,7 +288,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         storage.put_scalar("kpts_num_skipped_batches", _TOTAL_SKIPPED, smoothing_hint=False)
         return pred_keypoint_logits.sum() * 0
 
-    print('pred_keypoint_logits itself', pred_keypoint_logits)
+    print('pred_keypoint_logits itself', pred_keypoint_logits[:,0,0,0:5])
 
     print('{} images in batch (training)'.format(cnt_))
     print('GT 2d is {} GT 3d is {} before cat transformation'.format(len(kps), len(p3d)))
