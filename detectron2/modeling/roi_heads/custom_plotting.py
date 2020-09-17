@@ -26,6 +26,25 @@ def plot_2Dpose(ax, pose_2d, bones, bones_dashed=[], bones_dashdot=[], colormap=
         ax.set_xlim(limits[0],limits[2])
         ax.set_ylim(limits[1],limits[3])
 
+
+def plotPoseOnImage(poses, img, ax = plt):
+  img = img.permute(1,2,0)
+  #print('type',type(poses))
+  if type(poses) is not list:
+      poses = [poses]
+  
+  for pose in poses:
+    pose = pose.reshape(2,6) #scattter wants 2xN
+    ax.scatter(*pose)
+  ax.imshow(img)
+
+def plot_skeleton(ax, pose_2d, bones=bones_ego_idx, linewidth=2, linestyle='-'):
+    cmap = plt.get_cmap('hsv')
+    for bone in bones:
+        color = cmap(bone[1] * cmap.N // len(joint_names)) # color according to second joint index
+        ax.plot(pose_2d[bone,0], pose_2d[bone,1], linestyle, color=color, linewidth=linewidth)
+
+
 def plot3Dsphere(ax, p, radius=5, color=(0.5, 0.5, 0.5)):
     num_samples = 8
     u = np.linspace(0, 2 * np.pi, num_samples)
