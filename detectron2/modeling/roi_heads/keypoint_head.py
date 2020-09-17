@@ -462,9 +462,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('original pose3d loss ', pose2d_loss)
     
 
-    if normalizer is None:
-        normalizer = valid.numel()
-    pose3d_loss /= 3
+    # if normalizer is None:
+    #     normalizer = valid.numel()
+    # pose3d_loss /= 3
 
 
     #consider all valid
