@@ -250,7 +250,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #print('instances_per_image', instances_per_image) #contains grndtruths
         keypoints = instances_per_image.gt_keypoints
         print('keypoints.tensor[:,:,0:2] shape', keypoints.tensor[:,:,0:2].shape)
-        print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2])
+        #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2])
         # if len(keypoints) ==0:
         #   print('EMPTY KEYPOINTS, WHY?') 
         #   continue
@@ -262,7 +262,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
         print('pose3d_pts shape', pose3d_pts.shape)
-        print('pose3d_pts ', pose3d_pts)
+        #print('pose3d_pts ', pose3d_pts)
         ############################################################
         #e.g (8,6,3)
         #print('Daniel test keypoints', keypoints.tensor.shape)
@@ -291,8 +291,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         better_logits.append(best_2D) 
         ###################################
         
-        kps.append(keypoints.tensor[:,:,0:2][0]) #exclude visibility out
-        p3d.append(pose3d_pts[0])
+        kps.append(keypoints.tensor[:,:,0:2][0].unsqueeze(0)) #exclude visibility out
+        p3d.append(pose3d_pts[0].unsqueeze(0))
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -309,6 +309,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         storage.put_scalar("kpts_num_skipped_batches", _TOTAL_SKIPPED, smoothing_hint=False)
         return pred_keypoint_logits.sum() * 0
 
+    print('better_logits', better_logits.shape)
     print('length of better_logits should alwasys be three ', len(better_logits))
 
     print('{} images in batch (training)'.format(cnt_))
