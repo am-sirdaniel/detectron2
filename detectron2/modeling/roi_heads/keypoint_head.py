@@ -237,6 +237,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         cnt_+=1
         if len(instances_per_image) == 0:
             continue
+
+        print('instances_per_image', instances_per_image)
         keypoints = instances_per_image.gt_keypoints
         # if len(keypoints) ==0:
         #   print('EMPTY KEYPOINTS, WHY?') 
@@ -248,7 +250,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #############################################
         pose3d_pts = instances_per_image.gt_pose3d.cuda()
         pose3d_pts = pose3d_pts.reshape(pose3d_pts.shape[0],6,3)
-        
+        print('pose3d_pts shape', pose3d_pts.shape)
         ############################################################
         #e.g (8,6,3)
         #print('Daniel test keypoints', keypoints.tensor.shape)
@@ -261,7 +263,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #GT heatmaps -> to 1D vector
         heatmaps.append(heatmaps_per_image.view(-1)) #N*K
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
-        #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
+        
+        print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         ###################################
         p3d.append(pose3d_pts)
@@ -282,6 +285,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         return pred_keypoint_logits.sum() * 0
 
     print('{} images in batch (training)'.format(cnt_))
+    print('GT 2d is {} GT 3d is {} before cat transformation'.format(len(kps), len(p3d))
+
     kps = torch.cat(kps)
     p3d = torch.cat(p3d)
     print('GT pose2d shape', kps.shape)
@@ -293,11 +298,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
     #lets confirm equal total instances
-    try:
-        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
-    except:
-        print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
-        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+    # try:
+    #     assert (kps.shape[0] == pred_keypoint_logits.shape[0])
+    # except:
+    #     print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
+    #     assert (kps.shape[0] == pred_keypoint_logits.shape[0])
 
     # if use_2d:
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
