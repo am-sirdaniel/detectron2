@@ -278,7 +278,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
         
         #***** Pass in 2D best**************
-        num = keypoints.tensor[:,:,0:2].shape(0)
+        num = keypoints.tensor[:,:,0:2].shape[0]
         start = indexing
         stop = indexing + num
 
