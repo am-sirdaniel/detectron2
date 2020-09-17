@@ -167,13 +167,13 @@ def integral_2d_innovate(heatmap_, rois):
 
 
 
-def integral_3d_innovate(heatmap_):
+def integral_3d_innovate(heatmap_,  indices = []):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
     #select best
     #heatmap_ = heatmap_[best_index].unsqueeze(0)
 
-    heatmap = heatmap_[:,0:6,:,:]
+    heatmap = heatmap_[indices,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
 
     # H Heatmap, X,Y,Z location maps
@@ -239,7 +239,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
     
 
-    cnt_, indexing, better_logits = 0,0,[]
+    cnt_, indexing, better_logits, indices = 0,0,[],[]
     for instances_per_image in instances:
         cnt_+=1
         if len(instances_per_image) == 0:
@@ -283,6 +283,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         a,b = pred_integral['pose_2d global'][start:stop], keypoints.tensor[:,:,0:2]
         perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
         best_index = np.argmin(perf)
+        indices.append(best_index+start)
+
         print('best_index', best_index)
         best_2D = a[best_index].unsqueeze(0)
 
@@ -397,7 +399,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     
 
-    pred_3d = integral_3d_innovate(better_logits)
+    pred_3d = integral_3d_innovate(pred_keypoint_logits, indices = indices)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape) # (1,k,3)
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
     
