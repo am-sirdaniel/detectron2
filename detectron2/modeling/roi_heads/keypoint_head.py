@@ -167,11 +167,11 @@ def integral_2d_innovate(heatmap_, rois):
 
 
 
-def integral_3d_innovate(heatmap_, best_index):
+def integral_3d_innovate(heatmap_):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
     #select best
-    heatmap_ = heatmap_[best_index].unsqueeze(0)
+    #heatmap_ = heatmap_[best_index].unsqueeze(0)
 
     heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
@@ -234,9 +234,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
-    #M = len(instances)
-    #kps =  torch.zeros(M, )
-    cnt_ = 0
+    pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
+    hnorm_2d = pred_integral['probabilitymap']
+    print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
+    #print('valid', valid)
+    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
+
+
+    cnt_ = 0, indexing  = 0, better_logits = []
     for instances_per_image in instances:
         cnt_+=1
         if len(instances_per_image) == 0:
@@ -268,13 +273,26 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
         #print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0][0])
         #GT heatmaps -> to 1D vector
+
         heatmaps.append(heatmaps_per_image.view(-1)) #N*K
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
         
-        
-        kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
+        #***** Pass in 2D best**************
+        num = keypoints.tensor[:,:,0:2].shape(0)
+        start = indexing
+        stop = indexing + num
+
+        a,b = pred_integral['pose_2d global'][start:stop], keypoints.tensor[:,:,0:2]
+        perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
+        best_index = np.argmin(perf)
+        print('best_index', best_index)
+        best_2D = a[best_index].unsqueeze(0)
+
+        better_logits.append(best_2D) 
         ###################################
-        p3d.append(pose3d_pts)
+        
+        kps.append(keypoints.tensor[:,:,0:2][0]) #exclude visibility out
+        p3d.append(pose3d_pts[0])
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -291,7 +309,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         storage.put_scalar("kpts_num_skipped_batches", _TOTAL_SKIPPED, smoothing_hint=False)
         return pred_keypoint_logits.sum() * 0
 
-    print('pred_keypoint_logits itself', pred_keypoint_logits[:,0,0,0:5])
+    print('length of better_logits should alwasys be three ', len(better_logits))
 
     print('{} images in batch (training)'.format(cnt_))
     print('GT 2d is {} GT 3d is {} before cat transformation'.format(len(kps), len(p3d)))
@@ -303,7 +321,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     kps_origin = kps
 
-    print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
+    #print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
     # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
     # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
     #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
@@ -319,15 +337,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
     #print('using 2d innovate')
     #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
-    pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    hnorm_2d = pred_integral['probabilitymap']
-    print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
-    print('valid', valid)
-    pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
+    # pred_integral = integral_2d_innovate(better_logits, rois)
+    # hnorm_2d = pred_integral['probabilitymap']
+    # print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
+    # #print('valid', valid)
+    # pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
 
 
-    #normalize kps
-    
+    #normalize kps    
     kp_mean = torch.Tensor([[942.8855, 326.6883],
         [941.4666, 405.1611],
         [740.3054, 304.9617],
@@ -375,16 +392,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     # pose2d_loss /= my_normalizer
 
 
-    ############################################################
-    #***** Pass in 2D best**************
-    a,b = pred_integral['pose_2d global'], kps_origin
-    perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
-    best_index = np.argmin(perf)
-    print('best_index', best_index)
-    best_2D = a[best_index].unsqueeze(0)
-    print('best_2D shape', best_2D.shape)
+    
 
-    pred_3d = integral_3d_innovate(pred_keypoint_logits, best_index)
+    pred_3d = integral_3d_innovate(better_logits, best_index)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape) # (1,k,3)
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
     
@@ -584,7 +594,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
 
-    out2 = integral_3d_innovate(pred_keypoint_logits, best_index)
+    out2 = integral_3d_innovate(pred_keypoint_logits)
     heatmap_norm = out2['probabilitymap']
     print('3d heatmap_norm shape', heatmap_norm.shape)
     print('3d hip heatmap_norm', heatmap_norm[0][0][0])
