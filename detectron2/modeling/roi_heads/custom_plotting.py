@@ -38,11 +38,11 @@ def plotPoseOnImage(poses, img, ax = plt):
     ax.scatter(*pose)
   ax.imshow(img)
 
-def plot_skeleton(ax, pose_2d, bones=bones_ego_idx, linewidth=2, linestyle='-'):
-    cmap = plt.get_cmap('hsv')
-    for bone in bones:
-        color = cmap(bone[1] * cmap.N // len(joint_names)) # color according to second joint index
-        ax.plot(pose_2d[bone,0], pose_2d[bone,1], linestyle, color=color, linewidth=linewidth)
+# def plot_skeleton(ax, pose_2d, bones=bones_ego_idx, linewidth=2, linestyle='-'):
+#     cmap = plt.get_cmap('hsv')
+#     for bone in bones:
+#         color = cmap(bone[1] * cmap.N // len(joint_names)) # color according to second joint index
+#         ax.plot(pose_2d[bone,0], pose_2d[bone,1], linestyle, color=color, linewidth=linewidth)
 
 
 def plot3Dsphere(ax, p, radius=5, color=(0.5, 0.5, 0.5)):
