@@ -374,8 +374,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_integral_v1 = pred_integral['pose_2d global'].view(N * 6, -1)[valid]
     print('pred_integral_v1shape for 2d', pred_integral_v1.shape)
 
-    #print('example pred_integral_v1: ', pred_integral_v1[-3:])
-    #print('example kps 2d: ', kps[-3:])
+    print('example pred_integral_v1: ', pred_integral_v1[-3:])
+    print('example kps 2d: ', kps[-3:])
     #print()
     #print('final kps shape',kps.shape, 'final pred shape', pred_integral.shape)
     print('min and max of pred_integral_v1', torch.min(pred_integral_v1), torch.max(pred_integral_v1))
@@ -405,11 +405,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
     
     pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N,18
-    pose3d_gt = pose3d_gt[0].unsqueeze(0) #(1,18) pick only 1 since they are duplicates
+    #pose3d_gt = pose3d_gt[0].unsqueeze(0) #(1,18) pick only 1 since they are duplicates
 
 
 
-    print('Is pose3d_gt (1,18)?', pose3d_gt.shape) #1,18
+    print('Is pose3d_gt (3,18)?', pose3d_gt.shape) #3,18
 
     #Normalize 3d GT by mean-std relative to the hip (Project 2)
     # mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
