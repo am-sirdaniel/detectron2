@@ -309,6 +309,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         storage.put_scalar("kpts_num_skipped_batches", _TOTAL_SKIPPED, smoothing_hint=False)
         return pred_keypoint_logits.sum() * 0
 
+
+    better_logits = torch.Tensor(better_logits)
     print('better_logits', better_logits.shape)
     print('length of better_logits should alwasys be three ', len(better_logits))
 
@@ -395,7 +397,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     
 
-    pred_3d = integral_3d_innovate(better_logits, best_index)
+    pred_3d = integral_3d_innovate(better_logits)
     print('output shape from 3d pred_integral', pred_3d['pose_3d'].shape) # (1,k,3)
     print('what pred pose3d looks like', pred_3d['pose_3d'][0])
     
