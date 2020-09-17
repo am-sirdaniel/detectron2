@@ -584,7 +584,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
 
-    out2 = integral_3d_innovate(pred_keypoint_logits)
+    out2 = integral_3d_innovate(pred_keypoint_logits, best_index)
     heatmap_norm = out2['probabilitymap']
     print('3d heatmap_norm shape', heatmap_norm.shape)
     print('3d hip heatmap_norm', heatmap_norm[0][0][0])
