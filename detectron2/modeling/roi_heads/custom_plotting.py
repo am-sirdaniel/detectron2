@@ -28,7 +28,7 @@ def plot_2Dpose(ax, pose_2d, bones, bones_dashed=[], bones_dashdot=[], colormap=
 
 
 def plotPoseOnImage(poses, img, ax = plt):
-  img = img.permute(1,2,0)
+  #img = img.permute(1,2,0)
   #print('type',type(poses))
   if type(poses) is not list:
       poses = [poses]
