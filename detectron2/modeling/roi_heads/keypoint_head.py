@@ -454,7 +454,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_3d_star = pred_3d['pose_3d'].view(-1, 3) #[valid]
     pose3d_gt_star = pose3d_gt.view(-1, 3) #[valid]
 
-    #all_nan = torch.isnan(pose3d_gt_star)
+    all_nan = torch.isnan(pose3d_gt_star)
 
     pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
     #pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star, pose3d_gt_star)   
