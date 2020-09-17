@@ -171,7 +171,10 @@ def integral_3d_innovate(heatmap_,  indices = []):
     #heatmap i.e pred_keypoint_logits (Tensor): A tensor of shape (N, 72, S, S) / (N, K, H, W) 
     
     #select best
-    heatmap_ = heatmap_[indices]#.unsqueeze(0)
+    if len(indices) > 0:
+        heatmap_ = heatmap_[indices]#.unsqueeze(0)
+    else:
+        pass
 
     heatmap = heatmap_[:,0:6,:,:]
     h, w = heatmap.shape[2], heatmap.shape[3]
@@ -590,7 +593,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
-    print('pred_keypoint_logits', pred_keypoint_logits)
+    #print('pred_keypoint_logits', pred_keypoint_logits)
     out1 = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out1['probabilitymap']
     print('2d heatmap_norm shape', heatmap_norm.shape)
