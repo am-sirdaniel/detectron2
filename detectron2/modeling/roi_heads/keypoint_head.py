@@ -474,7 +474,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
 
-        display.clear_output(wait=True)
+        #display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
