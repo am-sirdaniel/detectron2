@@ -177,6 +177,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     bones_ego = [[0,1], [0,2],[2,4],[1,3], [3,5]]
 
     N, K, H, W = pred_keypoint_logits.shape
+    print('N, K, H, W', N, K, H, W)
     keypoint_side_len = pred_keypoint_logits.shape[2]
 
 
@@ -243,6 +244,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         
         kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
         p3d.append(pose3d_pts[0].unsqueeze(0))
+
+    if len(p3d) == 1:
+        return pred_keypoint_logits.sum() * 0
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
