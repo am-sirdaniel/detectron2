@@ -186,6 +186,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
+    pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
+    hnorm_2d = pred_integral['probabilitymap']
+    print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
+
     #M = len(instances)
     #kps =  torch.zeros(M, )
     for instances_per_image in instances:
@@ -216,9 +220,27 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         heatmaps.append(heatmaps_per_image.view(-1)) #N*K
         valid.append(valid_per_image.view(-1)) #stretch to 1D vector
         #print('keypoints.tensor[:,:,0:2]', keypoints.tensor[:,:,0:2].shape)
-        kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
+
+
+        #***** Pass in 2D best**************
+        num = keypoints.tensor[:,:,0:2].shape[0]
+        start = indexing
+        indexing = indexing + num
+        stop = indexing
+
+        a,b = pred_integral['pose_2d global'][start:stop], keypoints.tensor[:,:,0:2]
+        perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
+        best_index = np.argmin(perf)
+        indices.append(best_index+start)
+
+        print('best_index', best_index)
+        best_2D = a[best_index].unsqueeze(0)
+
+        better_logits.append(best_2D) 
         ###################################
-        p3d.append(pose3d_pts)
+        
+        kps.append(keypoints.tensor[:,:,0:2]) #exclude visibility out
+        p3d.append(pose3d_pts[0].unsqueeze(0))
 
     if len(heatmaps):
         keypoint_targets = cat(heatmaps, dim=0) #single vector (GT heatmaps)
@@ -236,32 +258,29 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         return pred_keypoint_logits.sum() * 0
 
     
+    print('indices', indices)
+    better_logits = torch.cat(better_logits)
+    print('better_logits', better_logits.shape)
+    print('length of better_logits should alwasys be three ', len(better_logits))
+
+    print('{} images in batch (training)'.format(cnt_))
+    print('GT 2d is {} GT 3d is {} before cat transformation'.format(len(kps), len(p3d)))
+
     kps = torch.cat(kps)
     p3d = torch.cat(p3d)
     print('GT pose2d shape', kps.shape)
     print('GT pose3d shape', p3d.shape)
 
-    keep_kps = kps
+    kps_origin = kps
+
+
+
 
     print('min and max of pred_keypoint_logits', torch.min(pred_keypoint_logits), torch.max(pred_keypoint_logits))
-    # pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
-    # pred_keypoint_logits_  = pred_keypoint_logits[valid].view(N,K, H,W)
-    #pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
-    #lets confirm equal total instances
-    try:
-        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
-    except:
-        print('kps shape', kps.shape, 'pred_keypoint_logits shape', pred_keypoint_logits.shape)
-        assert (kps.shape[0] == pred_keypoint_logits.shape[0])
-
-    # if use_2d:
-    #print('pred_keypoint_logits', pred_keypoint_logits[0][0:2])
-    #print('using 2d innovate')
-    #print('raw pred_keypoint_logits', pred_keypoint_logits.shape)
-    pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
-    print('confirm shape after integral ', pred_integral['pose_2d global'].shape)
-    pred_integral_v1 = pred_integral['pose_2d global'].view(N * K, -1)[valid]
+    # pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
+    # print('confirm shape after integral ', pred_integral['pose_2d global'].shape)
+    # pred_integral_v1 = pred_integral['pose_2d global'].view(N * K, -1)[valid]
 
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
@@ -309,7 +328,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     # best_2D = a[best_index].unsqueeze(0)
     # print('best_2D shape', best_2D.shape)
 
-    pred_3d = linearmodel(pred_integral_v2) #(1,18)
+    pred_3d = linearmodel(pred_integral_v2[indices]) #(1,18)
 
     # try:
     #     pred_3d = linearmodel(pred_integral_v2)
@@ -438,7 +457,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
