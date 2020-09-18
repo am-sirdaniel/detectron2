@@ -186,6 +186,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     bboxes_flat = cat([b.proposal_boxes.tensor for b in instances], dim=0)
     rois = bboxes_flat.detach()
 
+    print('pred_keypoint_logits', pred_keypoint_logits)
     pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     hnorm_2d = pred_integral['probabilitymap']
     print('confirm shape after 2d integral ', pred_integral['pose_2d global'].shape)
@@ -854,3 +855,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
+
