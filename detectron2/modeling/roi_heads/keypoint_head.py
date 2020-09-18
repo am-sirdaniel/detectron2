@@ -281,7 +281,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # pred_integral = integral_2d_innovate(pred_keypoint_logits, rois)
     # print('confirm shape after integral ', pred_integral['pose_2d global'].shape)
-    # pred_integral_v1 = pred_integral['pose_2d global'].view(N * K, -1)[valid]
+    pred_integral_v1 = pred_integral['pose_2d global'].view(N * K, -1)[valid]
 
 
     s1, s2 = kps.shape[0], kps.shape[1] #shape
