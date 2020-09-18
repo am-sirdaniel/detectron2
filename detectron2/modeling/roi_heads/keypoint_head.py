@@ -321,7 +321,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     print('what pred pose3d looks like', pred_3d[0])
     pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N, 18
 
-    pose3d_gt = pose3d_gt[0].unsqueeze(0) #(1,18) pick only 1 since they are duplicates
+    #pose3d_gt = pose3d_gt[0].unsqueeze(0) #(1,18) pick only 1 since they are duplicates
     print('what GT pose3d looks like', pose3d_gt[0])
     
     
