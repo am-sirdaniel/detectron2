@@ -408,6 +408,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     # except:
     #   print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
 
+    # if normalizer is None:
+    # normalizer = valid.numel()
+    pose3d_loss /= 3
+
+
     ##############################################################
 
     #comb_loss = pose2d_loss*1.0 + pose3d_loss*0.30 # score 0.6983
