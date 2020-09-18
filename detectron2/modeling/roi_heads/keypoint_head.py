@@ -302,14 +302,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     ############################################################
     #***** Pass in 2D best**************
-    a,b = pred_integral['pose_2d global'], kps_origin
-    perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
-    best_index = np.argmin(perf)
-    print('best_index', best_index)
-    best_2D = a[best_index].unsqueeze(0)
-    print('best_2D shape', best_2D.shape)
+    # a,b = pred_integral['pose_2d global'], kps_origin
+    # perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
+    # best_index = np.argmin(perf)
+    # print('best_index', best_index)
+    # best_2D = a[best_index].unsqueeze(0)
+    # print('best_2D shape', best_2D.shape)
 
-    pred_3d = linearmodel(best_2D.reshape(1, -1)) #(1,18)
+    pred_3d = linearmodel(pred_integral_v2) #(1,18)
 
     # try:
     #     pred_3d = linearmodel(pred_integral_v2)
