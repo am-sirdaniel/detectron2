@@ -192,6 +192,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     #M = len(instances)
     #kps =  torch.zeros(M, )
+    cnt_, indexing, better_logits, indices = 0,0,[],[]
     for instances_per_image in instances:
         if len(instances_per_image) == 0:
             continue
