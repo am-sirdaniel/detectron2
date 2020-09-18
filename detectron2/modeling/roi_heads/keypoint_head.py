@@ -476,10 +476,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     ##############################################################
 
-    comb_loss = pose2d_loss*0.50 + pose3d_loss*0.50  #(Good 0.6011)
+    #comb_loss = pose2d_loss*0.50 + pose3d_loss*0.50  #(Good 0.6011)
     #comb_loss = pose2d_loss*1.0 + pose3d_loss*0.3 (diverged)
     #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70  #(diverged)
-    #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30  #(Good 0.6011)
+    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30  #(Good 0.6011)
     #comb_loss = pose2d_loss*0.30 + pose3d_loss*0.70
 
     print('normalizer amount: ', normalizer)
@@ -603,6 +603,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     print('2d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
+    print('inference: min score', torch.min(scores))
+    print('inference: max score', torch.max(scores))
     #unstack
     i_, j_  = torch.unbind(out1['pose_2d global'], dim=2)
     #instance, K, 3) 3-> (x, y, score)
