@@ -353,16 +353,16 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out['probabilitymap']
-    posemap_norm = out['pose_norm'] #check this out
+    #posemap_norm = out['pose_norm'] #check this out
 
     print('heatmap_norm shape', heatmap_norm.shape)
     print('hip heatmap_norm', heatmap_norm[0][0][0])
     print('heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    scores2 = torch.max(torch.max(posemap_norm, dim = -1)[0], dim = -1)[0]
-    print('scores: ', scores[0])
-    print('scores: ', scores2[0])
+    #scores2 = torch.max(torch.max(posemap_norm, dim = -1)[0], dim = -1)[0]
+    print('scores from heatmap_norm: ', scores[0])
+    #print('scores: ', scores2[0])
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
@@ -374,16 +374,16 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
+    keypoint_results_prev = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
+
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
-    #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
-    # try:
-    #     print('pred keypoint_results after split', keypoint_results.tensor.shape)
-    #     print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
-    #     print('pred_instances', len(pred_instances))
-    # except:
-    #     pass
+    # 0 for x, 1 for y, 3 for scores in heatmaps_to_keypoints function
+    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+
+    #using the scores from heatmaps_to_keypoints (heatmap_norm are largely small)
+    keypoint_results[:, :, 3] = keypoint_results_prev[:, :, 3] 
+    print('scores from keypoint_results_prev: ', keypoint_results[0, :, 3])
 
     cnt = 0
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
