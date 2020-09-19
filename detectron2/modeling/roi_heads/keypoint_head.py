@@ -379,10 +379,11 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
     # 0 for x, 1 for y, 3 for scores in heatmaps_to_keypoints function
-    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
+    keypoint_results_prev = keypoint_results_prev[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
 
     #using the scores from heatmaps_to_keypoints (heatmap_norm are largely small)
-    #keypoint_results[:, :, 3] = keypoint_results_prev[:, :, 3] 
+    
     
 
     cnt = 0
