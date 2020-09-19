@@ -382,17 +382,22 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
 
     #using the scores from heatmaps_to_keypoints (heatmap_norm are largely small)
-    keypoint_results[:, :, 3] = keypoint_results_prev[:, :, 3] 
-    print('scores from keypoint_results_prev: ', keypoint_results[0, :, 3])
+    #keypoint_results[:, :, 3] = keypoint_results_prev[:, :, 3] 
+    
 
     cnt = 0
-    for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
+    for keypoint_results_per_image1,keypoint_results_per_image2, instances_per_image in zip(keypoint_results,keypoint_results_prev, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
-        print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
-        #print('instances_per_image:', instances_per_image)
-        instances_per_image.pred_keypoints = keypoint_results_per_image#.unsqueeze(0)
+        print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
+        print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
+
+        keypoint_results_per_image1[:, :, 3] = keypoint_results_per_image2[:, :, 3] 
+
+        print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 3])
+        print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 3])
+
+        instances_per_image.pred_keypoints = keypoint_results_per_image1#.unsqueeze(0)
         cnt+=1
 
     print('pred_instances length', cnt)
