@@ -393,10 +393,10 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
         print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
 
-        keypoint_results_per_image1[:, :, 3] = keypoint_results_per_image2[:, :, 3] 
+        keypoint_results_per_image1[:, :, 2] = keypoint_results_per_image2[:, :, 2] 
 
-        print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 3])
-        print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 3])
+        print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
+        print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
 
         instances_per_image.pred_keypoints = keypoint_results_per_image1#.unsqueeze(0)
         cnt+=1
