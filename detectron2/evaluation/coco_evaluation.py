@@ -26,7 +26,7 @@ from detectron2.utils.logger import create_small_table
 from .evaluator import DatasetEvaluator
 #from detectron2.evaluation.evaluator import DatasetEvaluator
 
-print('***************USING coco_evaluation Script *****************')
+print('*************** Coco_evaluation Script *****************')
 
 class COCOEvaluator(DatasetEvaluator):
     """
@@ -547,31 +547,31 @@ def _evaluate_predictions_on_coco(
         #print('try length DT', len(list(map(lambda x:x['pose_3d'], coco_gt.anns.values()))))
 
 
-        print('pred_3d_pts[0]', coco_results[0]['pred_3d_pts'])
-        print('pred_3d_pts[0] length', len(coco_results[0]['pred_3d_pts']))# Not Right ?
-        print('total', len(coco_results))
-        print('coco_results[0][pred_3d_pts]',  coco_results[0]['pred_3d_pts'])
-        #print('next(iter(coco_gt)', coco_gt) 'an object'
+        # print('pred_3d_pts[0]', coco_results[0]['pred_3d_pts'])
+        # print('pred_3d_pts[0] length', len(coco_results[0]['pred_3d_pts']))# Not Right ?
+        # print('total', len(coco_results))
+        # print('coco_results[0][pred_3d_pts]',  coco_results[0]['pred_3d_pts'])
+        # #print('next(iter(coco_gt)', coco_gt) 'an object'
 
-        pose_3d_gt = list(map(lambda x:x['pose_3d'], coco_gt.anns.values())) #correct values N, 3,6
-        pose_3d_gt = torch.Tensor(pose_3d_gt).view(len(pose_3d_gt),-1) #[N, 18]
-        print('pose_3d_gt length', len(pose_3d_gt))# N
-        print('pose_3d_gt sample', pose_3d_gt[0]) #[1,18]
+        # pose_3d_gt = list(map(lambda x:x['pose_3d'], coco_gt.anns.values())) #correct values N, 3,6
+        # pose_3d_gt = torch.Tensor(pose_3d_gt).view(len(pose_3d_gt),-1) #[N, 18]
+        # print('pose_3d_gt length', len(pose_3d_gt))# N
+        # print('pose_3d_gt sample', pose_3d_gt[0]) #[1,18]
 
-        print('try length GT', len(coco_gt.anns.values()))
-        print('try length GT', len(list(map(lambda x:x['pose_3d'], coco_gt.anns.values()))))
+        # print('try length GT', len(coco_gt.anns.values()))
+        # print('try length GT', len(list(map(lambda x:x['pose_3d'], coco_gt.anns.values()))))
 
 
-        #Normalize 3d GT by mean-std relative to the hip
-        mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
-            -1257.6155, -1297.9100, -1227.4360, -1220.5818, -1329.1154, -1301.5215,
-              797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920]),
-        torch.Tensor([ 15.5230,  19.4742,  25.6194,  15.5230,  19.4742,  25.6194, 183.8460,
-            172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
-            160.7282, 160.8192, 163.5823, 152.6740]))
+        # #Normalize 3d GT by mean-std relative to the hip
+        # mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
+        #     -1257.6155, -1297.9100, -1227.4360, -1220.5818, -1329.1154, -1301.5215,
+        #       797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920]),
+        # torch.Tensor([ 15.5230,  19.4742,  25.6194,  15.5230,  19.4742,  25.6194, 183.8460,
+        #     172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
+        #     160.7282, 160.8192, 163.5823, 152.6740]))
 
-        pose_3d_gt = (pose_3d_gt - mean_3d.view(1, 18))/std_3d.view(1, 18)
-        print('normalized 3d pose GT sample: ', pose_3d_gt)
+        # pose_3d_gt = (pose_3d_gt - mean_3d.view(1, 18))/std_3d.view(1, 18)
+        # print('normalized 3d pose GT sample: ', pose_3d_gt)
 
 
 
