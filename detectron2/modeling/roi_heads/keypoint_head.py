@@ -10,7 +10,10 @@ from detectron2.structures import Instances, heatmaps_to_keypoints
 from detectron2.utils.events import get_event_storage
 from detectron2.utils.registry import Registry
 
+
 _TOTAL_SKIPPED = 0
+_TOTAL_SKIPPED_KPS = 0
+_LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 
 
 __all__ = [
@@ -108,6 +111,33 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
     print('normalizer', normalizer)
     print('keypoint_loss', keypoint_loss)
+
+
+    global _LOSSES_2D
+    _LOSSES_2D.append(keypoint_loss)
+
+
+    # # plot progress
+    #only display if pose 3d GT has no nans 
+    if np.sum(np.isnan(pred_keypoint_logits[valid].detach().cpu().numpy())) == 0 :
+    #if 0:
+        # clear figures for a new update
+        fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
+        axes=fig.subplots(1,2)
+
+        axes[0].plot(_LOSSES_2D)
+        axes[0].set_yscale('log')
+        # clear output window and diplay updated figure
+
+        display.clear_output(wait=True)
+        #display.display(plt.gcf())
+        plt.show()
+        #plt.show()
+        plt.close()
+        #display.display()
+        #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
+
+
     return keypoint_loss
 
 
