@@ -403,12 +403,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
-        axs.append(f.add_subplot(2,3,0, projection='3d'))
         axs.append(f.add_subplot(2,3,1, projection='3d'))
         axs.append(f.add_subplot(2,3,2, projection='3d'))
         axs.append(f.add_subplot(2,3,3, projection='3d'))
         axs.append(f.add_subplot(2,3,4, projection='3d'))
         axs.append(f.add_subplot(2,3,5, projection='3d'))
+        axs.append(f.add_subplot(2,3,6, projection='3d'))
 
 
         # plot the ground truth and the predicted pose on top of the image
