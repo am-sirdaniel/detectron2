@@ -362,7 +362,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     scores2 = torch.max(torch.max(posemap_norm, dim = -1)[0], dim = -1)[0]
     print('scores: ', scores[0])
-    print('scores: ', score2[0])
+    print('scores: ', scores2[0])
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
