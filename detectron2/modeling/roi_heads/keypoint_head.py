@@ -348,6 +348,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     if pred_keypoint_logits.shape[0] == 0 :
         return None
 
+    print('pred_keypoint_logits looks like:', pred_keypoint_logits[0][0][0][0:5])
+
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
     print('check for box rois inference: ', [b for i, b in enumerate(pred_instances) if i < 3])
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
@@ -374,8 +376,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
-    # keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
+    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    #keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
     # try:
     #     print('pred keypoint_results after split', keypoint_results.tensor.shape)
     #     print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
@@ -390,7 +392,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
         #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
-        instances_per_image.pred_keypoints = keypoint_results#.unsqueeze(0)
+        instances_per_image.pred_keypoints = keypoint_results_per_image#.unsqueeze(0)
         cnt+=1
 
     print('pred_instances length', cnt)
@@ -628,8 +630,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
-
