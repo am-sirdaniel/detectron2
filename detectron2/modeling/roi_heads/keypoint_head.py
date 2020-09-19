@@ -403,10 +403,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
+        axs.append(f.add_subplot(2,3,0, projection='3d'))
+        axs.append(f.add_subplot(2,3,1, projection='3d'))
+        axs.append(f.add_subplot(2,3,2, projection='3d'))
         axs.append(f.add_subplot(2,3,3, projection='3d'))
         axs.append(f.add_subplot(2,3,4, projection='3d'))
         axs.append(f.add_subplot(2,3,5, projection='3d'))
-        axs.append(f.add_subplot(2,3,6, projection='3d'))
 
 
         # plot the ground truth and the predicted pose on top of the image
@@ -423,9 +425,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[3], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[3], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[4], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -550,10 +554,10 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
         print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
 
-        keypoint_results_per_image1[:, :, 2] = keypoint_results_per_image2[:, :, 2] 
-
         print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
         print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
+
+        keypoint_results_per_image1[:, :, 2] = keypoint_results_per_image2[:, :, 2] 
 
         instances_per_image.pred_keypoints = keypoint_results_per_image1#.unsqueeze(0)
         instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
