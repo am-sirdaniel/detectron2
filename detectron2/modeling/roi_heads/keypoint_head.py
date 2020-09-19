@@ -300,7 +300,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linermodel):
     # # plot progress
     #only display if pose 3d GT has no nans 
     #if np.sum(np.isnan(pred_keypoint_logits[valid].detach().cpu().numpy())) == 0 :
-    
+
     if 1:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
@@ -382,13 +382,17 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     except:
         pass
 
+    cnt = 0
     for keypoint_results_per_image, instances_per_image in zip(keypoint_results, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
-        print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
+        #print('min and max of keypoint_results_per_image', torch.min(keypoint_results_per_image), torch.max(keypoint_results_per_image))
         #print('instances_per_image:', instances_per_image)
         instances_per_image.pred_keypoints = keypoint_results #.unsqueeze(0)
+        cnt+=1
+
+    print('pred_instances length', cnt)
         
     #instances_per_image.pred_keypoints = keypoint_results
 
@@ -623,8 +627,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
-
