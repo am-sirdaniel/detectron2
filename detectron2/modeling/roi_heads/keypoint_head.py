@@ -104,28 +104,24 @@ def integral_2d_innovate(heatmap, rois):
     # transforming back to global relative coords
     #print('i_, scale_inv_x, start_x', i_.shape, scale_inv_x, start_x)
     print('i_ (before) as 0-1 coordinates', i_[0])
-    i_ = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
-    j_ = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
-
-    #i_ = i_ * scale_inv_x + start_x
-    #j_ = j_ * scale_inv_y + start_y
-    #print('i_ (after) as global coordinates', i_[0])
-
-    #
-    #print('scale x, scale_inv_x : ', scale_x, scale_inv_x)
+    i_g = i_ * scale_inv_x.reshape(-1,1) + start_x.reshape(-1,1)
+    j_g = j_ * scale_inv_y.reshape(-1,1) + start_y.reshape(-1,1)
 
     #Modified arrangement
-    pose  = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+    pose_glob  = torch.stack((i_g,j_g),dim=2) #[[i,i,i,,], #(N,K, 2)
                                        #[j,j,j,,,]]
 
-    print('checking, is I and J well placed as x,y?', pose[0][0:2])
+    pose_norm = torch.stack((i_,j_),dim=2) #[[i,i,i,,], #(N,K, 2)
+                                       #[j,j,j,,,]]
+
+    print('checking, is I and J well placed as x,y?', pose_glob[0][0:2])
     print('min and max of I ', torch.min(i_), torch.max(i_))
     print('min and max of J', torch.min(j_), torch.max(j_))
 
 
     #return relative global coordinates
     #print('pose relative global coordinates', pose[0][0])
-    return ({'probabilitymap': h_norm, 'pose_2d': pose}) #(N,K, 2)
+    return ({'probabilitymap': h_norm, 'pose_2d': pose_glob, 'pose_norm': pose_norm}) #(N,K, 2)
 
 def effective_2d_3d(pose2D_normalized):
     pred_pose3d = model2(pose2D_normalized.float())
@@ -357,12 +353,16 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out['probabilitymap']
+    posemap_norm = out['pose_norm'] #check this out
+
     print('heatmap_norm shape', heatmap_norm.shape)
     print('hip heatmap_norm', heatmap_norm[0][0][0])
     print('heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    #print('scores: ', scores)
+    scores2 = torch.max(torch.max(posemap_norm, dim = -1)[0], dim = -1)[0]
+    print('scores: ', scores[0])
+    print('scores: ', scores[1])
     #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
     #unstack
     i_, j_  = torch.unbind(out['pose_2d'], dim=2)
@@ -376,8 +376,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
-    keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
-    #keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
+    #keypoint_results = keypoint_results[:, :, [0, 1, 3]].split(num_instances_per_image, dim=0)
+    keypoint_results = keypoint_results[:, :, :].split(num_instances_per_image, dim=0)
     # try:
     #     print('pred keypoint_results after split', keypoint_results.tensor.shape)
     #     print('sample pred keypoint_results after split', keypoint_results.tensor[0][0])
@@ -630,3 +630,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
+
