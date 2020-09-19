@@ -403,8 +403,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
-        axs.append(f.add_subplot(2,2,3, projection='3d'))
-        axs.append(f.add_subplot(2,2,4, projection='3d'))
+        axs.append(f.add_subplot(2,3,3, projection='3d'))
+        axs.append(f.add_subplot(2,3,4, projection='3d'))
+        axs.append(f.add_subplot(2,3,5, projection='3d'))
+        axs.append(f.add_subplot(2,3,6, projection='3d'))
+
 
         # plot the ground truth and the predicted pose on top of the image
         #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
@@ -421,6 +424,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[3], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -506,7 +511,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
     #print("type of out['pose_2d']", type(out['pose_2d']))
     #unstack
 
-    i_, j_  = torch.unbind(out['pose_2d'], dim=2)
+    i_, j_  = torch.unbind(out['pose_2d global'], dim=2)
 
     #instance, K, 3) 3-> (x, y, score)
     keypoint_results = torch.stack((i_,j_, scores),dim=2)
