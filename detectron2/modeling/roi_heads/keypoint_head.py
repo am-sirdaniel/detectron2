@@ -178,6 +178,11 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         # keypoint_results_per_image is (num instances)x(num keypoints)x(x, y, score)
         instances_per_image.pred_keypoints = keypoint_results_per_image
         print('keypoint_results_per_image', keypoint_results_per_image.shape)
+        print('scores:', keypoint_results_per_image[:,:,2])
+
+        max_box = torch.max(keypoint_results_per_image, dim=0)[0]
+        print('max_box shape', max_box.shape)
+        print('pass box with maxiumum score:', max_box[:,:,2])
         cnt+=1
 
     print('pred_instances length', cnt)
