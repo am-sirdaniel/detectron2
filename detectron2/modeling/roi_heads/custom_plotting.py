@@ -28,15 +28,11 @@ def plot_2Dpose(ax, pose_2d, bones, bones_dashed=[], bones_dashdot=[], colormap=
 
 
 def plotPoseOnImage(poses, img, ax = plt):
-  #img = img.permute(1,2,0)
-  #print('type',type(poses))
-  if type(poses) is not list:
-      poses = [poses]
-  
-  for pose in poses:
-    pose = pose.reshape(2,6) #scattter wants 2xN
-    ax.scatter(*pose)
-  ax.imshow(img)
+    kps= torch.cat([poses[:,1].view(1,-1), poses[:,0].view(1,-1)])
+
+    ax.scatter(*kps)
+    ax.imshow(img)
+    plt.show()
 
 # def plot_skeleton(ax, pose_2d, bones=bones_ego_idx, linewidth=2, linestyle='-'):
 #     cmap = plt.get_cmap('hsv')
