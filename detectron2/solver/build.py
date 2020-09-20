@@ -148,7 +148,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     #print('**********total params ************', total_params)
 
     # 112 blocks for using only 2nd architecture layers (set 1st to False), total params = 
-    # 90 blocks for using only 2nd  1st architecture layers (set 2nd to False), total params = 
+    # 90 blocks for using only 1st architecture layers (set 2nd to False), total params = 
 
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
