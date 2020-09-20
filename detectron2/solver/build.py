@@ -116,9 +116,9 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
 #                 #Set 2nd architecture layers to False
 #                 value.requires_grad = False
                 
-#             if 167 > idx > 184:
-#                 #Set 1st architecture layers to False
-#                 value.requires_grad = False
+            if 167 > idx > 184:
+                #Set 1st architecture layers to False
+                value.requires_grad = False
             
             print('idx', idx, 'key: ',key, 'value.requires_grad:', value.requires_grad)
             #print('value',value[0])
@@ -142,7 +142,8 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
                 weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
     
-    #print('params', params)
+    print('**********no of params blocks used************', len(params))
+
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
     )
