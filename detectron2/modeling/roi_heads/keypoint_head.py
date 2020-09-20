@@ -281,16 +281,6 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
     
 
-
-    ############################################################
-    #***** Pass in 2D best**************
-    # a,b = pred_integral['pose_2d global'], kps_origin
-    # perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
-    # best_index = np.argmin(perf)
-    # print('best_index', best_index)
-    # best_2D = a[best_index].unsqueeze(0)
-    # print('best_2D shape', best_2D.shape)
-
     pred_3d = linearmodel(keep_kps.view(keep_kps.shape[0], -1)) #(1,18)
 
     # try:
@@ -406,7 +396,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axs.append(f.add_subplot(2,3,1, projection='3d'))
         axs.append(f.add_subplot(2,3,2, projection='3d'))
         axs.append(f.add_subplot(2,3,3, projection='3d'))
-        axs.append(f.add_subplot(2,3,4, projection='3d'))
+        #axs.append(f.add_subplot(2,3,4, projection='3d'))
         #axs.append(f.add_subplot(2,3,5, projection='3d'))
         #axs.append(f.add_subplot(2,3,6, projection='3d'))
 
@@ -425,10 +415,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        #custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[2], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[3], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
         axes[0].plot(_LOSSES_2D)
