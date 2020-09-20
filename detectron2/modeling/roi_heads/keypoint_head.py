@@ -419,6 +419,16 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
+        img = '/content/black_img2.png'
+        img = cv2.imread(img)
+        img = cv2.resize(img, (720, 1280))
+        img = np.array(img)
+        keep_kps = keep_kps.view(keep_kps.shape[0], 6,2)
+
+        
+        custom_plotting.plotPoseOnImage(pred_integral_v2[0].detach().cpu(), img, ax=plt)
+        custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=plt)
+
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
@@ -435,7 +445,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
 
-        #display.clear_output(wait=True)
+        display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
