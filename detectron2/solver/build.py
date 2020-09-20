@@ -112,9 +112,9 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     for idx, module in enumerate(model.modules()):
         #print(idx, '-->', module)
         for key, value in module.named_parameters(recurse=False):
-            if 167 <= idx <= 184:
-                #Set 2nd architecture layers to False
-                value.requires_grad = False
+            # if 167 <= idx <= 184:
+            #     #Set 2nd architecture layers to False
+            #     value.requires_grad = False
                 
             # if 167 > idx > 184:
             #     #Set 1st architecture layers to False
@@ -143,12 +143,12 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
     
     print('**********no of params blocks used************', len(params))
-    print('params', params[0:5])
-    total_params = sum(list(map(lambda x:x['params'], params)))
-    print('**********total params ************', total_params)
+    #print('params', params[0:5])
+    #total_params = sum(list(map(lambda x:x['params'], params)))
+    #print('**********total params ************', total_params)
 
     # 112 blocks for using only 2nd architecture layers (set 1st to False), total params = 
-    #    blocks for using only 2nd  1st architecture layers (set 2nd to False), total params = 
+    # 90 blocks for using only 2nd  1st architecture layers (set 2nd to False), total params = 
 
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
