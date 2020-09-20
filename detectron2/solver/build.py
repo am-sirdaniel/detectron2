@@ -143,7 +143,11 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
     
     print('**********no of params blocks used************', len(params))
-    # 112 blocks for setting 1st architecture layers to False
+    total_params = sum(list(map(lambda x:x['params'][0], params)))
+    print('**********total params ************', total_params)
+
+    # 112 blocks for setting 1st architecture layers to False, total params = 
+    # 
 
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
