@@ -120,7 +120,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             #     #Set 1st architecture layers to False
             #     value.requires_grad = False
             
-            print('idx', idx, 'key: ',key, 'value.requires_grad:', value.requires_grad)
+            print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
             #print('value',value[0])
             
             if not value.requires_grad:
@@ -143,11 +143,12 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
     
     print('**********no of params blocks used************', len(params))
-    total_params = sum(list(map(lambda x:x['params'][0], params)))
+    print('params', params[0:5])
+    total_params = sum(list(map(lambda x:x['params'], params)))
     print('**********total params ************', total_params)
 
-    # 112 blocks for setting 1st architecture layers to False, total params = 
-    # 
+    # 112 blocks for using only 2nd architecture layers (set 1st to False), total params = 
+    #    blocks for using only 2nd  1st architecture layers (set 2nd to False), total params = 
 
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
