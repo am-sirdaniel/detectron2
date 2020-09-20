@@ -363,8 +363,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #comb_loss = pose2d_loss*1.0 + pose3d_loss*3.0
 
     #pose2d_loss = 0
-    #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30 
-    comb_loss = pose3d_loss
+    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30 
+    #comb_loss = pose3d_loss
 
     
 
@@ -798,3 +798,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
+
