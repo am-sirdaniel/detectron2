@@ -3,6 +3,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d import proj3d
 
 import numpy as np
+import torch
 import scipy.linalg as la
 
 def plot_2Dpose(ax, pose_2d, bones, bones_dashed=[], bones_dashdot=[], colormap='hsv', 
