@@ -427,7 +427,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         keep_kps = keep_kps.view(keep_kps.shape[0], 6,2)
 
         
-        custom_plotting.plotPoseOnImage(pred_integral_v2[0].detach().cpu(), img, ax=plt)
+        custom_plotting.plotPoseOnImage(pred_integral_v2[0].view(6,2).detach().cpu(), img, ax=plt)
         custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=plt)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
