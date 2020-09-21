@@ -438,9 +438,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
 
-        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[3])
         custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=axes[3])
+        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[4])
         
+
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
         # clear output window and diplay updated figure
