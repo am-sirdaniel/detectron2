@@ -31,7 +31,7 @@ def plot_2Dpose(ax, pose_2d, bones, bones_dashed=[], bones_dashdot=[], colormap=
 def plotPoseOnImage(poses, img, ax = plt):
     kps= torch.cat([poses[:,1].view(1,-1), poses[:,0].view(1,-1)])
 
-    ax.scatter(*kps)
+    ax.scatter(*kps, c='r')
     ax.imshow(img)
     plt.show()
 
