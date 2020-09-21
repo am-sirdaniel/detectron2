@@ -395,7 +395,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,3)
+        axes=fig.subplots(1,4)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
@@ -429,7 +429,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         
         print('pred_integral_v2.view(-1,6,2)[0]', pred_integral_v2.view(-1,6,2)[0].shape)
         print('sample', pred_integral_v2.view(-1,6,2)[0])
-        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=plt)
+        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[3])
         custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=plt)
 
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
@@ -811,3 +811,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
+
