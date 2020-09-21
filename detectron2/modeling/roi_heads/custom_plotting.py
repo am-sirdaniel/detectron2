@@ -33,7 +33,7 @@ def plotPoseOnImage(poses, img, ax = plt):
 
     ax.scatter(*kps, c='r')
     ax.imshow(img)
-    plt.show()
+    #plt.show()
 
 # def plot_skeleton(ax, pose_2d, bones=bones_ego_idx, linewidth=2, linestyle='-'):
 #     cmap = plt.get_cmap('hsv')
