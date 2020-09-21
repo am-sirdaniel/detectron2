@@ -312,13 +312,15 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     #Normalize relative to the hip
     pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
-    pose3d_gt_raw = pose3d_gt
+
 
     midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
 
     print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.unsqueeze(1).shape)
     pose3d_gt = pose3d_gt - midhip.unsqueeze(1)
     pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], -1)
+
+    pose3d_gt_raw = pose3d_gt
 
 
     print('Is pose3d_gt (1,18)?', pose3d_gt.shape) #1,18
@@ -620,7 +622,7 @@ class Linear(nn.Module):
 
 class LinearModel(nn.Module):
     def __init__(self,
-                 linear_size=1024,
+                 linear_size=512,
                  num_stage=2,
                  p_dropout=0.5):
         super(LinearModel, self).__init__()
