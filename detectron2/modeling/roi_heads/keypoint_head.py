@@ -395,7 +395,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,4)
+        axes=fig.subplots(1,5)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
@@ -427,11 +427,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         keep_kps = keep_kps.view(keep_kps.shape[0], 6,2)
 
         
-        print('pred_integral_v2.view(-1,6,2)[0]', pred_integral_v2.view(-1,6,2)[0].shape)
-        print('sample', pred_integral_v2.view(-1,6,2)[0])
-        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[3])
-        custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=plt)
-
+        #print('pred_integral_v2.view(-1,6,2)[0]', pred_integral_v2.view(-1,6,2)[0].shape)
+        #print('sample', pred_integral_v2.view(-1,6,2)[0])
+        
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
@@ -439,6 +437,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
+
+        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[3])
+        custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=axes[3])
+        
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
         # clear output window and diplay updated figure
