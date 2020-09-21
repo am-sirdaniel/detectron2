@@ -591,6 +591,7 @@ def weight_init(m):
 
 
 class Linear(nn.Module):
+    ''' Represents the diagram in the paper for x1'''
     def __init__(self, linear_size, p_dropout=0.5):
         super(Linear, self).__init__()
         self.l_size = linear_size
@@ -622,8 +623,8 @@ class Linear(nn.Module):
 
 class LinearModel(nn.Module):
     def __init__(self,
-                 linear_size=512,
-                 num_stage=2,
+                 linear_size=1024,
+                 num_stage=3,
                  p_dropout=0.5):
         super(LinearModel, self).__init__()
 
@@ -816,8 +817,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
-
