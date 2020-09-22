@@ -13,10 +13,8 @@ from detectron2.utils.logger import log_every_n_seconds
 class DatasetEvaluator:
     """
     Base class for a dataset evaluator.
-
     The function :func:`inference_on_dataset` runs the model over
     all samples in the dataset, and have a DatasetEvaluator to process the inputs/outputs.
-
     This class will accumulate information of the inputs/outputs (by :meth:`process`),
     and produce evaluation results in the end (by :meth:`evaluate`).
     """
@@ -32,31 +30,24 @@ class DatasetEvaluator:
         """
         Process the pair of inputs and outputs.
         If they contain batches, the pairs can be consumed one-by-one using `zip`:
-
         .. code-block:: python
-
             for input_, output in zip(inputs, outputs):
                 # do evaluation on single input/output pair
                 ...
-
         Args:
             inputs (list): the inputs that's used to call the model.
             outputs (list): the return value of `model(inputs)`
         """
-        for input_, output in zip(inputs, outputs):
-            print('*******input_, output****', input_[0], output[0])
-                # do evaluation on single input/output pair
+        pass
 
     def evaluate(self):
         """
         Evaluate/summarize the performance, after processing all input/output pairs.
-
         Returns:
             dict:
                 A new evaluator class can return a dict of arbitrary format
                 as long as the user can process the results.
                 In our train_net.py, we expect the following format:
-
                 * key: the name of the task (e.g., bbox)
                 * value: a dict of {metric name: score}, e.g.: {"AP50": 80}
         """
@@ -66,7 +57,6 @@ class DatasetEvaluator:
 class DatasetEvaluators(DatasetEvaluator):
     """
     Wrapper class to combine multiple :class:`DatasetEvaluator` instances.
-
     This class dispatches every evaluation call to
     all of its :class:`DatasetEvaluator`.
     """
@@ -105,18 +95,15 @@ def inference_on_dataset(model, data_loader, evaluator):
     Run model on the data_loader and evaluate the metrics with evaluator.
     Also benchmark the inference speed of `model.forward` accurately.
     The model will be used in eval mode.
-
     Args:
         model (nn.Module): a module which accepts an object from
             `data_loader` and returns some outputs. It will be temporarily set to `eval` mode.
-
             If you wish to evaluate a model in `training` mode instead, you can
             wrap the given model and override its behavior of `.eval()` and `.train()`.
         data_loader: an iterable object with a length.
             The elements it generates will be the inputs to the model.
         evaluator (DatasetEvaluator): the evaluator to run. Use `None` if you only want
             to benchmark, but don't want to do any evaluation.
-
     Returns:
         The return value of `evaluator.evaluate()`
     """
@@ -144,6 +131,9 @@ def inference_on_dataset(model, data_loader, evaluator):
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time
+
+            print('********************** MY EVALUATION **********************')
+            print('inputs, outputs', inputs.shape, outputs.shape)
             evaluator.process(inputs, outputs)
 
             iters_after_start = idx + 1 - num_warmup * int(idx >= num_warmup)
@@ -188,7 +178,6 @@ def inference_context(model):
     """
     A context where the model is temporarily changed to eval mode,
     and restored to previous mode afterwards.
-
     Args:
         model: a torch Module
     """
