@@ -596,8 +596,8 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     #unstack
     i_, j_  = torch.unbind(out1['pose_2d global'], dim=2)
     #instance, K, 3) 3-> (x, y, score)
-    keypoint_results = torch.stack((i_,j_, scores),dim=2)
-    keypoint_results_prev = heatmaps_to_keypoints(pred_keypoint_logits.detach(), bboxes_flat.detach())
+    keypoint_results = torch.stack((i_,j_, scores),dim=2) #heatmap = heatmap_[:,0:6,:,:]
+    keypoint_results_prev = heatmaps_to_keypoints(pred_keypoint_logits[:,0:6,:,:].detach(), bboxes_flat.detach())
 
     #print('pred keypoint_results before split', keypoint_results.shape)
     num_instances_per_image = [len(i) for i in pred_instances]
