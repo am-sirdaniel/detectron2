@@ -484,7 +484,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         axs.append(f.add_subplot(2,3,2, projection='3d'))
         axs.append(f.add_subplot(2,3,3, projection='3d'))
 
-        axs_new = plt.figure(figsize=(10,10)).add_subplot(1,1,1)
+        #axs_new = plt.figure(figsize=(10,10)).add_subplot(1,1,1)
 
 
         #un-normalize for display 3D
@@ -507,9 +507,11 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         #custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        #custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-
+        try:
+            custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+            custom_plotting.plot_3Dpose(axs[3], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        except:
+            pass
 
         custom_plotting.plotPoseOnImage(kps_origin[0].detach().cpu(), img, ax=axes[4])
         custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][0].detach().cpu().float(), img, ax=axes[5])
