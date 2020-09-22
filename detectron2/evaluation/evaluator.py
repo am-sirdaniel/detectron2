@@ -133,6 +133,7 @@ def inference_on_dataset(model, data_loader, evaluator):
             total_compute_time += time.perf_counter() - start_compute_time
 
             print('********************** MY EVALUATION **********************')
+            print('inputs sample, outputs sample', inputs[0], outputs[0])
             print('inputs, outputs', inputs.shape, outputs.shape)
             evaluator.process(inputs, outputs)
 
