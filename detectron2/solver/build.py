@@ -121,7 +121,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             #     #Set 1st architecture layers to False
             #     value.requires_grad = False
             
-            #print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
+            print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
             #print('value',value[0])
             
             if not value.requires_grad:
