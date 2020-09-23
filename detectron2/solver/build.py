@@ -111,6 +111,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     memo: Set[torch.nn.parameter.Parameter] = set()
     for idx, module in enumerate(model.modules()):
         #print(idx, '-->', module)
+        print('module: ', module)
         for key, value in module.named_parameters(recurse=False):
             # if 167 <= idx <= 184:
             #     #Set 2nd architecture layers to False
@@ -120,7 +121,7 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             #     #Set 1st architecture layers to False
             #     value.requires_grad = False
             
-            print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
+            #print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
             #print('value',value[0])
             
             if not value.requires_grad:
@@ -147,8 +148,11 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     #total_params = sum(list(map(lambda x:x['params'], params)))
     #print('**********total params ************', total_params)
 
-    # 112 blocks for using only 2nd architecture layers (set 1st to False), total params = 
-    # 90 blocks for using only 1st architecture layers (set 2nd to False), total params = 
+    
+    # whole: 112 blocks
+    #90 blocks for using only 2D architecture layers (set 2nd to False), total params = 
+    #112 blocks for using only 3D architecture layers (i) 112 blocks  wasnt looking ok
+    # ii) you need to save 2D weights first, load up for 3D. Its not straight forward for Detectron
 
     optimizer = torch.optim.SGD(
         params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM, nesterov=cfg.SOLVER.NESTEROV
