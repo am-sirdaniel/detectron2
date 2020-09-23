@@ -109,9 +109,13 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
     )
     params: List[Dict[str, Any]] = []
     memo: Set[torch.nn.parameter.Parameter] = set()
-    for idx, module in enumerate(model.modules()):
+    # for idx, module in enumerate(model.modules()):
+    model.requires_grad = False
+    for idx, module in model.named_modules():
         #print(idx, '-->', module)
         print('module: ', module)
+        if idx == 'LinearModel':
+            module.requires_grad = True
         for key, value in module.named_parameters(recurse=False):
             # if 167 <= idx <= 184:
             #     #Set 2nd architecture layers to False
@@ -120,7 +124,6 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
             # if 167 > idx > 184:
             #     #Set 1st architecture layers to False
             #     value.requires_grad = False
-            
             print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
             #print('value',value[0])
             
