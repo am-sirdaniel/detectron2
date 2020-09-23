@@ -445,7 +445,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axes[2].plot(_LOSSES_COMB)
         axes[2].set_yscale('log')
 
-        display.clear_output(wait=True)
+        #display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
@@ -809,3 +809,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
+
