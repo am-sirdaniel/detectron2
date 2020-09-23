@@ -117,9 +117,9 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
         for key, value in module.named_parameters(recurse=False):
 
             if 'linearmodel' in idx.split('.'):
-                value.requires_grad = False
-            else:
                 value.requires_grad = True
+            else:
+                value.requires_grad = False
 
             print('idx', idx, ', key: ',key, ', value.requires_grad:', value.requires_grad)
             #print('value',value[0])
