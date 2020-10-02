@@ -496,7 +496,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         pred_3d = pred_3d.view(-1, 6,3)
 
 
-        img = '/content/drive/My Drive/black_img2.png'
+        #img = '/content/drive/My Drive/black_img2.png'
+        img = 'black_img2.png'
         img = cv2.imread(img)
         img = cv2.resize(img, (720, 1280))
         img = np.array(img)
