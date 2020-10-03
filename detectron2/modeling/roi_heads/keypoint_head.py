@@ -289,7 +289,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     try:
         pred_3d = linearmodel(pred_integral_v2) #(1,18)
     except:
-        print(*****'Another linear model error'*********)
+        print('*****Another linear model error*********')
         one_dim_model_error +=1
         return pred_keypoint_logits.sum() * 0  #No feedback
 
