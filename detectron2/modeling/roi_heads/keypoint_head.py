@@ -38,6 +38,7 @@ _TOTAL_SKIPPED = 0
 _TOTAL_SKIPPED_KPS = 0
 _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 _PCK_SCORE = 0
+one_dim_model_error = 0
 
 print('******************** OPTIMIZING ONLY 2D LOSS IN END-END SCRIPT *****************')
 
@@ -283,7 +284,14 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     
 
     #pred_3d = linearmodel(keep_kps.view(keep_kps.shape[0], -1)) #(1,18)
-    pred_3d = linearmodel(pred_integral_v2) #(1,18)
+    global one_dim_model_error
+
+    try:
+        pred_3d = linearmodel(pred_integral_v2) #(1,18)
+    except:
+        print(*****'Another linear model error'*********)
+        one_dim_model_error +=1
+        return pred_keypoint_logits.sum() * 0  #No feedback
 
     # try:
     #     pred_3d = linearmodel(pred_integral_v2)
