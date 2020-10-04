@@ -426,7 +426,9 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        img = '/content/drive/My Drive/black_img2.png'
+        #img = '/content/drive/My Drive/black_img2.png'
+        img = 'PoseProject3/black_img2.png'
+        
         img = cv2.imread(img)
         img = cv2.resize(img, (720, 1280))
         img = np.array(img)
@@ -462,7 +464,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #display.display()
         #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
         print('linear model error real time count:', one_dim_model_error)
-        
+
     return pose2d_loss
 
 
@@ -820,4 +822,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
 
-    
