@@ -24,7 +24,6 @@ import pandas as pd
 #import h5py
 import os
 from IPython import display
-import cv2
 #import torch.nn.functional as nn
 
 
@@ -40,7 +39,7 @@ _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 _PCK_SCORE = 0
 one_dim_model_error = 0
 
-print('******************** OPTIMIZING ONLY 2D LOSS IN END-END SCRIPT *****************')
+print('********************USING END-END SCRIPT *****************')
 
 __all__ = [
     "ROI_KEYPOINT_HEAD_REGISTRY",
@@ -283,7 +282,15 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
     
 
-    #pred_3d = linearmodel(keep_kps.view(keep_kps.shape[0], -1)) #(1,18)
+
+    ############################################################
+    #***** Pass in 2D best**************
+    # a,b = pred_integral['pose_2d global'], kps_origin
+    # perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
+    # best_index = np.argmin(perf)
+    # print('best_index', best_index)
+    # best_2D = a[best_index].unsqueeze(0)
+    # print('best_2D shape', best_2D.shape)
     global one_dim_model_error
 
     try:
@@ -321,15 +328,13 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     #Normalize relative to the hip
     pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
-
+    pose3d_gt_raw = pose3d_gt
 
     midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
 
     print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.unsqueeze(1).shape)
     pose3d_gt = pose3d_gt - midhip.unsqueeze(1)
     pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], -1)
-
-    pose3d_gt_raw = pose3d_gt
 
 
     print('Is pose3d_gt (1,18)?', pose3d_gt.shape) #1,18
@@ -373,17 +378,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #comb_loss = pose2d_loss*0.8 + pose3d_loss*0.30 # score 0.5844
     #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70
     #comb_loss = pose2d_loss*1.0 + pose3d_loss*3.0
-
-    #pose2d_loss = 0
-    #comb_loss = pose2d_loss*0.70 + pose3d_loss*0.30 
-    #comb_loss = pose3d_loss
-
-    
+    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70 
 
     global _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB
     _LOSSES_2D.append(pose2d_loss)
     _LOSSES_3D.append(pose3d_loss)
-    #_LOSSES_COMB.append(comb_loss)
+    _LOSSES_COMB.append(comb_loss)
 
     storage = get_event_storage()  
     print('storage', storage)
@@ -392,7 +392,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
     print('pose3d_LOSS: ', pose3d_loss)
-    #print('combined_loss: ', comb_loss)
+    print('combined_loss: ', comb_loss)
     
     print()
     print()
@@ -406,17 +406,22 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,5)
+        axes=fig.subplots(1,3)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
         axs.append(f.add_subplot(2,3,1, projection='3d'))
         axs.append(f.add_subplot(2,3,2, projection='3d'))
         axs.append(f.add_subplot(2,3,3, projection='3d'))
-        #axs.append(f.add_subplot(2,3,4, projection='3d'))
+        axs.append(f.add_subplot(2,3,4, projection='3d'))
         #axs.append(f.add_subplot(2,3,5, projection='3d'))
         #axs.append(f.add_subplot(2,3,6, projection='3d'))
 
+
+        # plot the ground truth and the predicted pose on top of the image
+        #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
+        #axes[1].set_title('Input image with predicted 2D pose (solid) and GT 2D pose (dashed)')
+        
 
         #un-normalize for display 3D
         #pose3d_gt = (pose3d_gt * std_3d) + mean_3d
@@ -426,26 +431,12 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        img = '/content/drive/My Drive/black_img2.png'
-        #img = 'black_img2.png'
-
-        img = cv2.imread(img)
-        img = cv2.resize(img, (720, 1280))
-        img = np.array(img)
-        keep_kps = keep_kps.view(keep_kps.shape[0], 6,2)
-
-        
         custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        #custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[2], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[2], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        custom_plotting.plot_3Dpose(axs[3], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-
-
-        custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=axes[3])
-        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[4])
-        
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
@@ -453,8 +444,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axes[1].plot(_LOSSES_3D)
         axes[1].set_yscale('log')
 
-        #axes[2].plot(_LOSSES_COMB)
-        #axes[2].set_yscale('log')
+        axes[2].plot(_LOSSES_COMB)
+        axes[2].set_yscale('log')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
@@ -465,7 +456,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
         print('linear model error real time count:', one_dim_model_error)
 
-    return pose2d_loss
+    return comb_loss
 
 
 def pck(target, pred, treshold=100):
@@ -569,7 +560,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         
         print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
         print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
-        #print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
+        print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
 
         print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
         print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
@@ -595,7 +586,6 @@ def weight_init(m):
 
 
 class Linear(nn.Module):
-    ''' Represents the diagram in the paper for x1'''
     def __init__(self, linear_size, p_dropout=0.5):
         super(Linear, self).__init__()
         self.l_size = linear_size
@@ -628,9 +618,9 @@ class Linear(nn.Module):
 class LinearModel(nn.Module):
     def __init__(self,
                  linear_size=1024,
-                 num_stage=3,
+                 num_stage=2,
                  p_dropout=0.5):
-        super(LinearModel, self).__init__() 
+        super(LinearModel, self).__init__()
 
         self.linear_size = linear_size
         self.p_dropout = p_dropout
@@ -821,8 +811,4 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
-
-
-
-
 
