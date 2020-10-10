@@ -40,7 +40,7 @@ _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 _PCK_SCORE = 0
 one_dim_model_error = 0
 
-print('******************** OPTIMIZING ONLY 2D LOSS IN END-END SCRIPT *****************')
+print('********************USING END-END SCRIPT *****************')
 
 __all__ = [
     "ROI_KEYPOINT_HEAD_REGISTRY",
@@ -292,7 +292,6 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         print('*****Another linear model error*********')
         one_dim_model_error +=1
         return pred_keypoint_logits.sum() * 0  #No feedback
-
     # try:
     #     pred_3d = linearmodel(pred_integral_v2)
     #     print('Another linear model worked..No error')
@@ -434,9 +433,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        #img = '/content/drive/My Drive/black_img2.png'
         img = 'black_img2.png'
-
         img = cv2.imread(img)
         img = cv2.resize(img, (720, 1280))
         img = np.array(img)
@@ -461,8 +458,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         axes[1].plot(_LOSSES_3D)
         axes[1].set_yscale('log')
 
-        #axes[2].plot(_LOSSES_COMB)
-        #axes[2].set_yscale('log')
+        axes[2].plot(_LOSSES_COMB)
+        axes[2].set_yscale('log')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
@@ -473,7 +470,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
         print('linear model error real time count:', one_dim_model_error)
 
-    return pose2d_loss
+    return pose3d_loss
 
 
 def pck(target, pred, treshold=100):
@@ -577,7 +574,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         
         print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
         print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
-        #print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
+        print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
 
         print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
         print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
@@ -829,3 +826,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
+
