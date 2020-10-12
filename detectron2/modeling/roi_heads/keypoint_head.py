@@ -410,7 +410,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # # plot progress
     #only display if pose 3d GT has no nans 
-    if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
+    if np.sum(np.isnan(pred_integral_v1.detach().cpu().numpy())) == 0 :
     #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
