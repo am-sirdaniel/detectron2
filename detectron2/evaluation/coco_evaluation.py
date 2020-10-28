@@ -166,7 +166,7 @@ class COCOEvaluator(DatasetEvaluator):
         """
         self._logger.info("Preparing results for COCO format ...")
         coco_results = list(itertools.chain(*[x["instances"] for x in predictions]))
-        print('coco_results sample', coco_results[0:5])
+        #print('coco_results sample', coco_results[0:5])
 
         # unmap the category ids for COCO
         if hasattr(self._metadata, "thing_dataset_id_to_contiguous_id"):
@@ -292,8 +292,8 @@ class COCOEvaluator(DatasetEvaluator):
         if class_names is None or len(class_names) <= 1:
             return results
 
-        print('coco_eval, coco_eval.eval', coco_eval, coco_eval.eval)
-        print('coco_eval.eval.keys()', coco_eval.eval.keys())
+        # print('coco_eval, coco_eval.eval', coco_eval, coco_eval.eval)
+        # print('coco_eval.eval.keys()', coco_eval.eval.keys())
 
         # Compute per-category AP
         # from https://github.com/facebookresearch/Detectron/blob/a6a835f5b8208c45d0dce217ce9bbda915f44df7/detectron/datasets/json_dataset_evaluator.py#L222-L252 # noqa
@@ -370,7 +370,7 @@ def instances_to_coco_json(instances, img_id):
         keypoints = instances.pred_keypoints
 
     if has_3d_pts:
-        print('YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSS. Found pred_3d_pts')
+        #print('YESSSSSSSSSSSSSSSSSSSSSSSSSSSSSS. Found pred_3d_pts')
         pred_3d_pts = instances.pred_3d_pts
 
     results = []
