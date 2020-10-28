@@ -639,7 +639,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     # 3D
     pose3d_results = out2['pose_3d']
-    print('output 3d shape in testing', pose3d_results.shape)
+    #print('output 3d shape in testing', pose3d_results.shape)
     #print('min and max of out3d in testing', torch.min(pred_3d), torch.max(pred_3d))
     pred_3d  = pose3d_results[:, :].split(num_instances_per_image, dim=0)
 
