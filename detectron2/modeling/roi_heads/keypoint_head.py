@@ -588,20 +588,20 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         return None
 
     # flatten all GT bboxes from all images together (list[Boxes] -> Rx4 tensor)
-    print('check for box rois inference: ', [b for i, b in enumerate(pred_instances) if i < 3])
+    #print('check for box rois inference: ', [b for i, b in enumerate(pred_instances) if i < 3])
     bboxes_flat = cat([b.pred_boxes.tensor for b in pred_instances], dim=0)
     pred_rois = bboxes_flat.detach()
 
     #print('pred_keypoint_logits', pred_keypoint_logits)
     out1 = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out1['probabilitymap']
-    print('2d heatmap_norm shape', heatmap_norm.shape)
-    print('2d hip heatmap_norm', heatmap_norm[0][0][0])
-    print('2d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
+    # print('2d heatmap_norm shape', heatmap_norm.shape)
+    # print('2d hip heatmap_norm', heatmap_norm[0][0][0])
+    # print('2d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    print('inference: min score', torch.min(scores))
-    print('inference: max score', torch.max(scores))
+    # print('inference: min score', torch.min(scores))
+    # print('inference: max score', torch.max(scores))
     #unstack
     i_, j_  = torch.unbind(out1['pose_2d global'], dim=2)
     #instance, K, 3) 3-> (x, y, score)
@@ -618,9 +618,9 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
 
     out2 = integral_3d_innovate(pred_keypoint_logits)
     heatmap_norm = out2['probabilitymap']
-    print('3d heatmap_norm shape', heatmap_norm.shape)
-    print('3d hip heatmap_norm', heatmap_norm[0][0][0])
-    print('3d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
+    # print('3d heatmap_norm shape', heatmap_norm.shape)
+    # print('3d hip heatmap_norm', heatmap_norm[0][0][0])
+    # print('3d heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
     #scores for the ankle etc
     #scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
     #print('scores: ', scores)
@@ -647,18 +647,18 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
     for keypoint_results_per_image1, keypoint_results_per_image2, pred_3d_results_per_image, instances_per_image in zip(keypoint_results, keypoint_results_prev, pred_3d, pred_instances):
         
 
-        print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
-        print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
-        print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
+        # print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
+        # print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
+        # print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
 
-        print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
-        print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
+        # print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
+        # print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
 
         keypoint_results_per_image1[:, :, 2] = keypoint_results_per_image2[:, :, 2] 
 
         instances_per_image.pred_keypoints = keypoint_results_per_image1#.unsqueeze(0)
         instances_per_image.pred_3d_pts = pred_3d_results_per_image #.unsqueeze(0)
-        print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
+        #print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
 
         cnt+=1
 
@@ -666,7 +666,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances):
         #instances_per_image.pred_3d_pts = pred_3d_results_per_image#.squeeze(0)
         #print('pred_3d_results_per_image sample', pred_3d_results_per_image[0])
 
-    print('{} images in pred_instances (testing)'.format(cnt))
+    #print('{} images in pred_instances (testing)'.format(cnt))
 
 class BaseKeypointRCNNHead(nn.Module):
     """
