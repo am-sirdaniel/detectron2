@@ -132,10 +132,10 @@ def inference_on_dataset(model, data_loader, evaluator):
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time
 
-            print('********************** MY EVALUATION in evaluator.py**********************')
+            #print('********************** MY EVALUATION in evaluator.py**********************')
             #print('inputs sample, outputs sample', inputs[0], outputs[0])
-            #print('inputs,', len(inputs))
-            #print(' outputs', len(outputs))
+            print('inputs,', len(inputs))
+            print(' outputs', len(outputs))
             evaluator.process(inputs, outputs)
 
             iters_after_start = idx + 1 - num_warmup * int(idx >= num_warmup)
