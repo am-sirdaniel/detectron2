@@ -105,7 +105,7 @@ class COCOEvaluator(DatasetEvaluator):
         return tasks
 
     def process(self, inputs, outputs):
-        print('***************USING process Method *****************')
+        #print('***************USING process Method *****************')
         """
         Args:
             inputs: the inputs to a COCO model (e.g., GeneralizedRCNN).
@@ -129,7 +129,7 @@ class COCOEvaluator(DatasetEvaluator):
             #print ('can we get list of all methods in this class', dir(self))
 
     def evaluate(self):
-        print('***************USING evaluate Method *****************')
+        #print('***************USING evaluate Method *****************')
         if self._distributed:
             comm.synchronize()
             predictions = comm.gather(self._predictions, dst=0)
@@ -159,7 +159,7 @@ class COCOEvaluator(DatasetEvaluator):
         return copy.deepcopy(self._results)
 
     def _eval_predictions(self, tasks, predictions):
-        print('***************USING _eval_predictions Method *****************')
+        #print('***************USING _eval_predictions Method *****************')
         """
         Evaluate predictions on the given tasks.
         Fill self._results with the metrics of the tasks.
@@ -311,7 +311,7 @@ class COCOEvaluator(DatasetEvaluator):
             results_per_category.append(("{}".format(name), float(ap * 100)))
 
         # tabulate it - TABULATION IN RESULTS
-        print('**************TABULATION IN RESULTS *****************')
+        #print('**************TABULATION IN RESULTS *****************')
         N_COLS = min(6, len(results_per_category) * 2)
         results_flatten = list(itertools.chain(*results_per_category))
         results_2d = itertools.zip_longest(*[results_flatten[i::N_COLS] for i in range(N_COLS)])
@@ -329,7 +329,7 @@ class COCOEvaluator(DatasetEvaluator):
 
 
 def instances_to_coco_json(instances, img_id):
-    print('***************USING instances_to_coco_json *****************')
+    #print('***************USING instances_to_coco_json *****************')
     """
     Dump an "Instances" object to a COCO-format json that's used for evaluation.
     Args:
@@ -519,7 +519,7 @@ def _evaluate_predictions_on_coco(
     """
     Evaluate the coco results using COCOEval API.
     """
-    print('***************USING _evaluate_predictions_on_coco Method *****************')
+    #print('***************USING _evaluate_predictions_on_coco Method *****************')
     assert len(coco_results) > 0
 
     if iou_type == "segm":
@@ -533,7 +533,7 @@ def _evaluate_predictions_on_coco(
 
     coco_dt = coco_gt.loadRes(coco_results)
     coco_eval = (COCOeval_opt if use_fast_impl else COCOeval)(coco_gt, coco_dt, iou_type)
-    print('***************USING {} Method*****************'.format(('Unofficial COCOeval_opt' if use_fast_impl else 'Official COCOeval')))
+    #print('***************USING {} Method*****************'.format(('Unofficial COCOeval_opt' if use_fast_impl else 'Official COCOeval')))
 
     if iou_type == "keypoints":
         # Use the COCO default keypoint OKS sigmas unless overrides are specified
