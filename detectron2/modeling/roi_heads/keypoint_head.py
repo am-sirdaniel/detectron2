@@ -821,6 +821,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         return x
 
 
-
-
-
