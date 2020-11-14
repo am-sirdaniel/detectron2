@@ -505,10 +505,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
 
 
         #img = '/content/drive/My Drive/black_img2.png'
-        img = 'black_img2.png'
-        img = cv2.imread(img)
-        img = cv2.resize(img, (720, 1280))
-        img = np.array(img)
+        #img = 'black_img2.png'
+        #img = cv2.imread(img)
+        #img = cv2.resize(img, (720, 1280))
+        #img = np.array(img)
         kps_origin = kps_origin.view(-1, 6,2)
 
         
@@ -522,8 +522,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         except:
             pass
 
-        custom_plotting.plotPoseOnImage(kps_origin[0].detach().cpu(), img, ax=axes[4])
-        custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][0].detach().cpu().float(), img, ax=axes[5])
+        # custom_plotting.plotPoseOnImage(kps_origin[0].detach().cpu(), img, ax=axes[4])
+        # custom_plotting.plotPoseOnImage(pred_integral['pose_2d global'][0].detach().cpu().float(), img, ax=axes[5])
         
 
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
