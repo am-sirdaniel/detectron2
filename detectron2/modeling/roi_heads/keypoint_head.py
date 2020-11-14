@@ -24,6 +24,7 @@ import pandas as pd
 #import h5py
 import os
 from IPython import display
+import cv2
 #import torch.nn.functional as nn
 
 
@@ -39,7 +40,7 @@ _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB = [], [], []
 _PCK_SCORE = 0
 one_dim_model_error = 0
 
-print('********************USING END-END SCRIPT *****************')
+print('******************** OPTIMIZING ONLY 2D LOSS IN END-END SCRIPT *****************')
 
 __all__ = [
     "ROI_KEYPOINT_HEAD_REGISTRY",
@@ -282,125 +283,24 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
     ##The 1st model should be invariant to bad keypoints, such that it predicts for missing kps
     
 
-
-    ############################################################
-    #***** Pass in 2D best**************
-    # a,b = pred_integral['pose_2d global'], kps_origin
-    # perf = list(map(lambda x: torch.nn.functional.mse_loss(x[0],x[1]) , zip(a,b)))
-    # best_index = np.argmin(perf)
-    # print('best_index', best_index)
-    # best_2D = a[best_index].unsqueeze(0)
-    # print('best_2D shape', best_2D.shape)
+    #pred_3d = linearmodel(keep_kps.view(keep_kps.shape[0], -1)) #(1,18)
     global one_dim_model_error
 
-    try:
-        pred_3d = linearmodel(pred_integral_v2) #(1,18)
-    except:
-        #print('*****Another linear model error*********')
-        one_dim_model_error +=1
-        return pred_keypoint_logits.sum() * 0  #No feedback
 
-    # try:
-    #     pred_3d = linearmodel(pred_integral_v2)
-    #     print('Another linear model worked..No error')
-    # except:
-    #     pass
-
-    # print('output shape from linear pred_integral', pred_3d.shape)
-    # print('what pred pose3d looks like', pred_3d[0])
-    pose3d_gt = p3d.reshape(p3d.shape[0],-1) #N, 18
-
-    #pose3d_gt = pose3d_gt[0].unsqueeze(0) #(1,18) pick only 1 since they are duplicates
-    #print('what GT pose3d looks like', pose3d_gt[0])
-    
-    
-
-    
-
-    #Normalize 3d GT by mean-std
-  #   mean_3d, std_3d = (torch.Tensor([ 333.5211,  218.9238,  364.4432,  186.7393,  392.3470,  166.7051,
-  #        -945.6299, -946.6586, -871.1463, -868.2529, -959.4473, -961.2425,
-  #        1055.2781, 1052.3322,  673.6290,  670.1853,  292.7418,  296.1209]).cuda(),
-    # torch.Tensor([ 12.9435,  12.9282,  13.6145,  21.5151,  17.2765,  32.8399, 143.9522,
-  #        143.2831, 192.1633, 199.3143, 165.5452, 174.0693, 182.4063, 182.2134,
-  #        161.9945, 159.9102, 146.8468, 146.0199]).cuda())
-
-
-    #Normalize relative to the hip
-    pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], 6,3) #N,6,3
-    pose3d_gt_raw = pose3d_gt
-
-    midhip = (pose3d_gt[:,0] + pose3d_gt[:,1])/2
-
-    #print('pose3d_gt shape, midhip shape', pose3d_gt.shape, midhip.unsqueeze(1).shape)
-    pose3d_gt = pose3d_gt - midhip.unsqueeze(1)
-    pose3d_gt = pose3d_gt.view(pose3d_gt.shape[0], -1)
-
-
-    #print('Is pose3d_gt (1,18)?', pose3d_gt.shape) #1,18
-
-    #Normalize 3d GT by mean-std relative to the hip (Project 2)
-    # mean_3d, std_3d = (torch.Tensor([   90.4226,   -99.0404,   113.7033,   -90.4226,    99.0404,  -113.7033,
-    #     -1257.6155, -1297.9100, -1227.4360, -1220.5818, -1329.1154, -1301.5215,
-    #       797.3640,   756.3050,   403.3004,   410.9879,   -14.6912,    16.2920]).cuda(),
-    # torch.Tensor([ 15.5230,  19.4742,  25.6194,  15.5230,  19.4742,  25.6194, 183.8460,
-    #     172.6190, 212.3050, 218.0117, 192.0247, 208.0867, 178.1015, 186.4496,
-    #     160.7282, 160.8192, 163.5823, 152.6740]).cuda())
-
-    #Normalize 3d GT by mean-std relative to the hip (Project 3)
-    # mean_3d, std_3d = (torch.Tensor([   90.4712,  -100.0514,   113.9451,   -90.4712,   100.0514,  -113.9451,
-    #     -1272.1144, -1312.7323, -1242.2559, -1237.8091, -1341.8601, -1318.6337,
-    #       801.4175,   760.1226,   408.5650,   416.2698,    -7.5783,    23.3722]).cuda(),
-    # torch.Tensor([ 15.1813,  18.4730,  25.2961,  15.1813,  18.4730,  25.2961, 182.1320,
-    #     169.5995, 213.0917, 218.8727, 193.2803, 208.0172, 176.0335, 183.7734,
-    #     158.1118, 158.2999, 160.9153, 149.7474]).cuda())
-
-    #Normalize 3d GT by mean-std relative to the hip (Project 4)
-    mean_3d, std_3d = (torch.Tensor([   91.5992,   -99.9035,   115.7859,   -91.5992,    99.9035,  -115.7859,
-        -1263.1136, -1305.7050, -1230.7388, -1224.5455, -1334.9712, -1306.6281,
-          797.6835,   754.6006,   402.0096,   409.7104,   -18.6221,    13.9856]).cuda(),
-    torch.Tensor([ 14.9965,  19.1308,  25.2411,  14.9965,  19.1308,  25.2411, 184.2079,
-        171.5209, 213.8425, 218.6449, 193.8331, 208.3669, 179.1101, 187.5975,
-        161.2839, 161.2712, 163.4836, 152.8132]).cuda())
-
-    pose3d_gt = (pose3d_gt - mean_3d)/std_3d
-    #print('normalized 3d pose GT sample: ', pose3d_gt[0])
-
-    pred_3d_star = pred_3d.view(-1, 3)
-    pose3d_gt_star = pose3d_gt.view(-1, 3)
-        #print('invalid removed, new shapes: pred_3d, pose3d_gt',type(pred_3d), type(pose3d_gt),pred_3d.shape, pose3d_gt.shape)
-    
-        #wxclude nans from GT pose3d]
-    all_nan = torch.isnan(pose3d_gt_star)
-
-    #consider all valid
-    pose3d_loss = torch.nn.functional.mse_loss(pred_3d_star[~all_nan], pose3d_gt_star[~all_nan])
-    # try:
-    #   print('pose3d_LOSS: ', pose3d_loss)
-    # except:
-    #   print('pose3d_loss', torch.nn.functional.mse_loss(pred_3d, pose3d_gt))
-
-    ##############################################################
-
-    #comb_loss = pose2d_loss*1.0 + pose3d_loss*0.30 # score 0.6983
-    #comb_loss = pose2d_loss*0.8 + pose3d_loss*0.30 # score 0.5844
-    comb_loss = pose2d_loss*0.70 + pose3d_loss*0.70
-    #comb_loss = pose2d_loss*1.0 + pose3d_loss*3.0
-    #comb_loss = pose2d_loss*1.0 + pose3d_loss*0.30 
 
     global _LOSSES_2D, _LOSSES_3D, _LOSSES_COMB
     _LOSSES_2D.append(pose2d_loss)
-    _LOSSES_3D.append(pose3d_loss)
-    _LOSSES_COMB.append(comb_loss)
+    #_LOSSES_3D.append(pose3d_loss)
+    #_LOSSES_COMB.append(comb_loss)
 
     storage = get_event_storage()  
     #print('storage', storage)
     #storage.p     
     #storage.put_scalar("comb_loss", _LOSSES)
 
-    # print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
-    # print('pose3d_LOSS: ', pose3d_loss)
-    # print('combined_loss: ', comb_loss)
+    #print('normalized loss: ', pose2d_loss, 'normalizer amount: ', normalizer)
+    #print('pose3d_LOSS: ', pose3d_loss)
+    #print('combined_loss: ', comb_loss)
     
     # print()
     # print()
@@ -410,50 +310,52 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
 
     # # plot progress
     #only display if pose 3d GT has no nans 
-    if np.sum(np.isnan(pose3d_gt.detach().cpu().numpy())) == 0 :
+    if np.sum(np.isnan(pred_integral_v1.detach().cpu().numpy())) == 0 :
     #if 0:
         # clear figures for a new update
         fig=plt.figure(figsize=(20, 5), dpi= 80, facecolor='w', edgecolor='k')
-        axes=fig.subplots(1,3)
+        axes=fig.subplots(1,5)
 
         axs=[]
         f = plt.figure(figsize=(10,10))
         axs.append(f.add_subplot(2,3,1, projection='3d'))
         axs.append(f.add_subplot(2,3,2, projection='3d'))
         axs.append(f.add_subplot(2,3,3, projection='3d'))
-        axs.append(f.add_subplot(2,3,4, projection='3d'))
+        #axs.append(f.add_subplot(2,3,4, projection='3d'))
         #axs.append(f.add_subplot(2,3,5, projection='3d'))
         #axs.append(f.add_subplot(2,3,6, projection='3d'))
 
 
-        # plot the ground truth and the predicted pose on top of the image
-        #plotPoseOnImage([pred_integral['pose_2d global'][0], keep_kps[0]], ecds.denormalize(batch_cpu['img'][0]), ax=axes[0])
-        #axes[1].set_title('Input image with predicted 2D pose (solid) and GT 2D pose (dashed)')
-        
-
         #un-normalize for display 3D
         #pose3d_gt = (pose3d_gt * std_3d) + mean_3d
-        pred_3d = (pred_3d * std_3d) + mean_3d
-        pred_3d = pred_3d.view(pred_3d.shape[0], 6,3)
+        #pred_3d = (pred_3d * std_3d) + mean_3d
+        #pred_3d = pred_3d.view(pred_3d.shape[0], 6,3)
 
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        custom_plotting.plot_3Dpose(axs[0], pose3d_gt_raw[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[1], pose3d_gt_raw[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        #custom_plotting.plot_3Dpose(axs[2], pose3d_gt_raw[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[2], pred_3d[0].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        custom_plotting.plot_3Dpose(axs[3], pred_3d[1].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
-        #custom_plotting.plot_3Dpose(axs[5], pred_3d[2].detach().cpu(),  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
+        #img = '/content/drive/My Drive/black_img2.png'
+        img = 'black_img2.png'
+
+        img = cv2.imread(img)
+        img = cv2.resize(img, (720, 1280))
+        img = np.array(img)
+        keep_kps = keep_kps.view(keep_kps.shape[0], 6,2)
+
+        
+
+        custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=axes[3])
+        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[4])
+        
 
         axes[0].plot(_LOSSES_2D)
         axes[0].set_yscale('log')
         # clear output window and diplay updated figure
-        axes[1].plot(_LOSSES_3D)
-        axes[1].set_yscale('log')
+        #axes[1].plot(_LOSSES_3D)
+        #axes[1].set_yscale('log')
 
-        axes[2].plot(_LOSSES_COMB)
-        axes[2].set_yscale('log')
+        #axes[2].plot(_LOSSES_COMB)
+        #axes[2].set_yscale('log')
 
         display.clear_output(wait=True)
         #display.display(plt.gcf())
@@ -464,7 +366,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #print("Epoch {}, iteration {} of {} ({} %), loss={}".format(e, i, len(train_loader), 100*i//len(train_loader), losses[-1]))
         #print('linear model error real time count:', one_dim_model_error)
 
-    return comb_loss
+    return pose2d_loss
 
 
 def pck(target, pred, treshold=100):
@@ -521,15 +423,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
 
     out = integral_2d_innovate(pred_keypoint_logits, pred_rois)
     heatmap_norm = out['probabilitymap']
-    # print('heatmap_norm shape', heatmap_norm.shape)
-    # print('hip heatmap_norm', heatmap_norm[0][0][0])
-    # print('heatmap prob sum to 1: ', torch.sum(heatmap_norm[0][0]))
-    #scores for the ankle etc
     scores = torch.max(torch.max(heatmap_norm, dim = -1)[0], dim = -1)[0]
-    #print('scores: ', scores)
-    #max_ = torch.max(torch.max(heatmap, dim=-1)[0], dim=-1, keepdim=True)[0].unsqueeze(-1) #soving the numerical problem
-    #print("type of out['pose_2d']", type(out['pose_2d']))
-    #unstack
 
     i_, j_  = torch.unbind(out['pose_2d global'], dim=2)
 
@@ -568,7 +462,7 @@ def keypoint_rcnn_inference(pred_keypoint_logits, pred_instances, linearmodel):
         
         # print('keypoint_results_per_image1', keypoint_results_per_image1.shape)
         # print('keypoint_results_per_image2', keypoint_results_per_image2.shape)
-        # print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
+        # #print('pred_3d_results_per_image', pred_3d_results_per_image.shape)
 
         # print('scores from keypoint_results_per_image1: ', keypoint_results_per_image1[0, :, 2])
         # print('scores from keypoint_results_per_image2: ', keypoint_results_per_image2[0, :, 2])
@@ -594,6 +488,7 @@ def weight_init(m):
 
 
 class Linear(nn.Module):
+    ''' Represents the diagram in the paper for x1'''
     def __init__(self, linear_size, p_dropout=0.5):
         super(Linear, self).__init__()
         self.l_size = linear_size
@@ -628,7 +523,7 @@ class LinearModel(nn.Module):
                  linear_size=1024,
                  num_stage=2,
                  p_dropout=0.5):
-        super(LinearModel, self).__init__()
+        super(LinearModel, self).__init__() 
 
         self.linear_size = linear_size
         self.p_dropout = p_dropout
