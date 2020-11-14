@@ -334,18 +334,18 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer, linearmodel)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
         #custom_plotting.plot_2Dpose(axs[0], pose3d_gt[0].detach().cpu().T,  bones=bones_ego, color_order=color_order_ego,flip_yz=False)
 
-        img = '/content/drive/My Drive/black_img2.png'
+        #img = '/content/drive/My Drive/black_img2.png'
         #img = 'black_img2.png'
 
-        img = cv2.imread(img)
-        img = cv2.resize(img, (720, 1280))
-        img = np.array(img)
+        # img = cv2.imread(img)
+        # img = cv2.resize(img, (720, 1280))
+        #img = np.array(img)
         keep_kps = keep_kps.view(keep_kps.shape[0], 6,2)
 
         
 
-        custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=axes[3])
-        custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[4])
+        #custom_plotting.plotPoseOnImage(keep_kps[0].detach().cpu(), img, ax=axes[3])
+        #custom_plotting.plotPoseOnImage(pred_integral_v2.view(-1,6,2)[0].detach().cpu().float(), img, ax=axes[4])
         
 
         axes[0].plot(_LOSSES_2D)
@@ -714,4 +714,8 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = self.score_lowres(x)
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
+
+
+
+
 
