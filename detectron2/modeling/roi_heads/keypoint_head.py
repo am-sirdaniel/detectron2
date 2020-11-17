@@ -830,7 +830,3 @@ class KRCNNConvDeconvUpsampleHead(BaseKeypointRCNNHead):
         x = interpolate(x, scale_factor=self.up_scale, mode="bilinear", align_corners=False)
         return x
 
-
-
-
-
