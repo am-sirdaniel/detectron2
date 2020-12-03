@@ -71,7 +71,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         if len(instances_per_image) == 0:
             continue
         keypoints = instances_per_image.gt_keypoints
-        print('GT keypoints', keypoints.tensor.shape, keypoints.tensor[0][0])
+        print('GT keypoints', keypoints.tensor.shape) # , keypoints.tensor[0][0])
 
         #[xmin,ymin,w,h]	
         #print('looking for gt boxes [xmin,ymin,w,h] format', instances_per_image.gt_boxes.shape, instances_per_image.gt_boxes)
@@ -81,8 +81,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
             instances_per_image.proposal_boxes.tensor, keypoint_side_len
         )
 
-        print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0])
-        print('can we extract ROI start x and start y ?')
+        #print('keypoint 2 GT heatmap => Indices of ROI, lets see hip heatmap', heatmaps_per_image.shape, heatmaps_per_image[0])
+        #print('can we extract ROI start x and start y ?')
         heatmaps.append(heatmaps_per_image.view(-1))
         valid.append(valid_per_image.view(-1))
 
@@ -105,10 +105,10 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
     pred_keypoint_logits = pred_keypoint_logits.view(N * K, H * W)
 
     print('pred_keypoint_logits[valid]', pred_keypoint_logits[valid].shape)
-    print('keypoint_targets[valid]', keypoint_targets[valid][0].shape)
+    print('keypoint_targets[valid]', keypoint_targets[valid].shape)
 
-    print('min and max of GT heatmaps', torch.min(keypoint_targets[valid]), torch.max(keypoint_targets[valid]))
-    print('min and max of pred heatmaps', torch.min(pred_keypoint_logits[valid]), torch.max(pred_keypoint_logits[valid]))
+    #print('min and max of GT heatmaps', torch.min(keypoint_targets[valid]), torch.max(keypoint_targets[valid]))
+    #print('min and max of pred heatmaps', torch.min(pred_keypoint_logits[valid]), torch.max(pred_keypoint_logits[valid]))
     keypoint_loss = F.cross_entropy(
         pred_keypoint_logits[valid], keypoint_targets[valid], reduction="sum"
     )
@@ -118,8 +118,8 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         normalizer = valid.numel()
     keypoint_loss /= normalizer
 
-    print('normalizer', normalizer)
-    print('keypoint_loss', keypoint_loss)
+    # print('normalizer', normalizer)
+    # print('keypoint_loss', keypoint_loss)
 
 
     global _LOSSES_2D
@@ -138,7 +138,7 @@ def keypoint_rcnn_loss(pred_keypoint_logits, instances, normalizer):
         axes[0].set_yscale('log')
         # clear output window and diplay updated figure
 
-        display.clear_output(wait=True)
+        #display.clear_output(wait=True)
         #display.display(plt.gcf())
         plt.show()
         #plt.show()
